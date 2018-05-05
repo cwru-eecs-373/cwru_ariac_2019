@@ -16,11 +16,13 @@
 */
 
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <limits>
 #include <mutex>
 #include <ostream>
 #include <string>
+#include <thread>
 #include <vector>
 #include <gazebo/common/Assert.hh>
 #include <gazebo/common/Console.hh>
@@ -30,6 +32,7 @@
 #include <gazebo/physics/PhysicsTypes.hh>
 #include <gazebo/physics/World.hh>
 #include <gazebo/transport/transport.hh>
+#include <gazebo/util/LogRecord.hh>
 #include <ros/ros.h>
 #include <sdf/sdf.hh>
 #include <std_msgs/Float32.h>
@@ -626,6 +629,15 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
     auto v = std::getenv("ARIAC_EXIT_ON_COMPLETION");
     if (v)
     {
+      // Gazebo will accumulate a number of state loggings before writing them to file.
+      // Request that the accumulated states are written now before we shutdown,
+      // otherwise the end of the state log may be cut off.
+      util::LogRecord::Instance()->Notify();
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+
+      std::string logMessage = "Requesting that Gazebo shut down";
+      gzmsg << logMessage << std::endl;
+      ROS_INFO("%s", logMessage.c_str());
       msgs::ServerControl msg;
       msg.set_stop(true);
       this->dataPtr->serverControlPub->Publish(msg);
