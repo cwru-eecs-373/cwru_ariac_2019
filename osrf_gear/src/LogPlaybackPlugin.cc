@@ -44,8 +44,6 @@ void LogPlaybackPlugin::Load(int _argc, char **_argv)
   this->updateConn = event::Events::ConnectWorldUpdateBegin(
       std::bind(&LogPlaybackPlugin::Update, this));
 
-  this->node = transport::NodePtr(new transport::Node());
-  this->node->Init();
 }
 
 //////////////////////////////////////////////////
@@ -56,6 +54,9 @@ void LogPlaybackPlugin::Init()
 //////////////////////////////////////////////////
 void LogPlaybackPlugin::OnWorldCreated()
 {
+  this->node = transport::NodePtr(new transport::Node());
+  this->node->Init();
+
   this->world = gazebo::physics::get_world();
 
   std::cout << "World created. Model count: " << this->world->ModelCount()
