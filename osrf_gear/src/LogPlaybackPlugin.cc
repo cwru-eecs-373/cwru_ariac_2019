@@ -35,6 +35,9 @@ LogPlaybackPlugin::~LogPlaybackPlugin()
 //////////////////////////////////////////////////
 void LogPlaybackPlugin::Load(int _argc, char **_argv)
 {
+  (void) _argc;
+  (void) _argv;
+
   this->worldCreatedConn = event::Events::ConnectWorldCreated(
       std::bind(&LogPlaybackPlugin::OnWorldCreated, this));
 
@@ -55,14 +58,14 @@ void LogPlaybackPlugin::OnWorldCreated()
 {
   this->world = gazebo::physics::get_world();
 
-  std::cout << "World created. Model Count [" << this->world->ModelCount()
+  std::cout << "World created. Model count: " << this->world->ModelCount()
             << std::endl;
 
   gazebo::physics::Model_V models = this->world->Models();
 
-  // Get the shipping boxes.
   for (gazebo::physics::ModelPtr model : models)
   {
+    // Get the shipping boxes.
     if (model->GetName().find("shipping_box") != std::string::npos)
     {
       this->boxes.push_back(model);
@@ -74,6 +77,8 @@ void LogPlaybackPlugin::OnWorldCreated()
           topicName);
       std::cout << "Shipping box model: " << model->GetName() << std::endl;
     }
+
+    // Get the drone.
     if (model->GetName().find("drone") != std::string::npos)
     {
       this->drone = model;
@@ -95,6 +100,7 @@ void LogPlaybackPlugin::Update()
     double xPos = box->WorldPose().Pos().X();
     double yPos = box->WorldPose().Pos().Y();
     double zPos = box->WorldPose().Pos().Z();
+    // Toggle the box's visuals when it reaches the end of the belt.
     if ((yPos < -2.8 && !this->toggled[box->GetName()]) ||
         (yPos > -2.8 && this->toggled[box->GetName()]))
     {
@@ -104,6 +110,8 @@ void LogPlaybackPlugin::Update()
       this->pubs[box->GetName()]->Publish(toggleMsg);
     }
 
+    // Enable the drone's box visual when the waiting box gets "collected".
+    // At that point the waiting box gets teleported out-of-sight.
     if (yPos < -9 && zPos < 0 && xPos < -7 &&
         !this->droneToggled[box->GetName()])
     {

@@ -51,16 +51,20 @@ namespace gazebo
     /// \brief Node for communication.
     private: gazebo::transport::NodePtr node;
 
-    /// \brief Publisher used to stop the server.
+    /// \brief Publisher used to control the drone's box visual.
     private: transport::PublisherPtr droneTogglePub;
 
     /// \brief Pointer to the world.
     private: gazebo::physics::WorldPtr world;
 
-    /// \brief The list of shipping boxe models.
+    /// \brief The list of shipping box models.
     private: std::vector<gazebo::physics::ModelPtr> boxes;
+
+    /// \brief Map between shipping box names and their state.
     private: std::map<std::string, bool> toggled;
     private: std::map<std::string, bool> droneToggled;
+
+    /// \brief Publishers used to control the shipping boxes' visuals.
     private: std::map<std::string, transport::PublisherPtr> pubs;
 
     /// \brief The drone model.
