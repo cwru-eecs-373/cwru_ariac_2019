@@ -62,6 +62,12 @@ namespace gazebo
     private: std::map<std::string, bool> toggled;
     private: std::map<std::string, bool> droneToggled;
     private: std::map<std::string, transport::PublisherPtr> pubs;
+
+    /// \brief The drone model.
+    private: gazebo::physics::ModelPtr drone;
+
+    /// \brief True if the drone's box visual is enabled.
+    private: bool droneBoxEnabled;
   };
 }
 #endif

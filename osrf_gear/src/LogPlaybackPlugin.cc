@@ -72,7 +72,13 @@ void LogPlaybackPlugin::OnWorldCreated()
         model->GetName() + "_visual_toggle";
       this->pubs[model->GetName()] = this->node->Advertise<msgs::GzString>(
           topicName);
-      std::cout << "Model:" << model->GetName() << std::endl;
+      std::cout << "Shipping box model: " << model->GetName() << std::endl;
+    }
+    if (model->GetName().find("drone") != std::string::npos)
+    {
+      this->drone = model;
+      this->droneBoxEnabled = false;
+      std::cout << "Drone model: " << model->GetName() << std::endl;
     }
   }
 
@@ -102,9 +108,20 @@ void LogPlaybackPlugin::Update()
         !this->droneToggled[box->GetName()])
     {
       this->droneToggled[box->GetName()] = true;
+      this->droneBoxEnabled = true;
       gazebo::msgs::GzString toggleMsg;
       toggleMsg.set_data("on");
       this->droneTogglePub->Publish(toggleMsg);
     }
+  }
+
+  // A drone may collect multiple boxes in a single trial.
+  // Disable the drone's box visual at the start of repeat animations.
+  if (this->droneBoxEnabled && this->drone->WorldPose().Pos().X() < -1.0)
+  {
+    this->droneBoxEnabled = false;
+    gazebo::msgs::GzString toggleMsg;
+    toggleMsg.set_data("off");
+    this->droneTogglePub->Publish(toggleMsg);
   }
 }
