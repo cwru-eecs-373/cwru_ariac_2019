@@ -137,6 +137,16 @@ install(TARGETS ${toggle_visual_plugin_name}
   RUNTIME DESTINATION bin
 )
 
+# Create the libLogPlaybackPlugin.so library.
+set(logplayback_plugin_name LogPlaybackPlugin)
+add_library(${logplayback_plugin_name} src/LogPlaybackPlugin.cc)
+target_link_libraries(${logplayback_plugin_name} ${GAZEBO_LIBRARIES})
+install(TARGETS ${logplayback_plugin_name}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
 
 # Create the libSideContactPlugin.so library.
 set(side_contact_plugin_name SideContactPlugin)

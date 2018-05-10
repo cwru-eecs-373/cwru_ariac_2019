@@ -7,7 +7,7 @@
   <arg name="no_gui" default="false" />
 
   <node name="gazebo" pkg="gazebo_ros" type="gzserver"
-    args="-p $(arg state_log_path) --pause $(arg extra_gazebo_args)" required="true" />
+    args="-p $(arg state_log_path) -s $(find osrf_gear)/../../lib/libLogPlaybackPlugin.so --pause $(arg extra_gazebo_args)" required="true" />
 
   <!-- start gazebo client -->
   <group unless="$(arg no_gui)">
