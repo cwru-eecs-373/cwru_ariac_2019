@@ -1,0 +1,199 @@
+time_limit: 500
+
+options:
+  insert_models_over_bins: true
+  fill_demo_shipment: false
+  start_box_at_belt_center: false
+  gazebo_state_logging: true
+  visualize_drop_regions: false
+
+orders:
+  order_0:
+    announcement_condition: time
+    announcement_condition_value: 0.0
+    shipment_count: 1
+    products:
+      part_0:
+        type: gear_part
+        pose:
+          xyz: [0.0, -0.2, 0]
+          rpy: [0, 0, 0]
+      part_1:
+        type: disk_part
+        pose:
+          xyz: [-0.15, -0.2, 0]
+          rpy: [0, 0, '-pi/2']
+      part_2:
+        type: gasket_part
+        pose:
+          xyz: [0.0, 0.25, 0]
+          rpy: [0, 0, 'pi/4']
+      part_3:
+        type: gasket_part
+        pose:
+          xyz: [0.12, 0.25, 0]
+          rpy: [0, 0, 'pi/4']
+
+models_over_bins:
+  bin2:
+    models:
+      disk_part:
+        xyz_start: [0.05, 0.22, 0.0]
+        xyz_end: [0.2, 0.35, 0.0]
+        rpy: [0, 0, 'pi/4']
+        num_models_x: 2
+        num_models_y: 2
+  bin3:
+    models:
+      gear_part:
+        xyz_start: [0.2, 0.1, 0.0]
+        xyz_end: [0.3, 0.37, 0.0]
+        rpy: [0, 0, 0]
+        num_models_x: 1
+        num_models_y: 1
+  bin4:
+    models:
+      gasket_part:
+        xyz_start: [0.1, 0.05, 0.0]
+        xyz_end: [0.25, 0.35, 0.0]
+        rpy: [0, 0, '-pi/4']
+        num_models_x: 1
+        num_models_y: 2
+
+drops:
+  drop_regions:
+    bin4_reachable:
+      min:
+        xyz: [-0.65, 1.6, 0.7]
+      max:
+        xyz: [-0.55, 2.40, 1.3]
+      destination:
+        xyz: [-0.7, 1.8, 0.76]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gasket_part
+    shipping_box_0_external_left:
+      frame: shipping_box_0::box_base
+      min:
+        xyz: [-0.2, -0.35, 0.0]
+      max:
+        xyz: [0.2, 0.0, 0.5]
+      destination:
+        xyz: [0.0, -0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_0_external_right:
+      frame: shipping_box_0::box_base
+      min:
+        xyz: [-0.2, 0.0, 0.0]
+      max:
+        xyz: [0.2, 0.35, 0.5]
+      destination:
+        xyz: [0.0, 0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_1_external_left:
+      frame: shipping_box_1::box_base
+      min:
+        xyz: [-0.2, -0.35, 0.0]
+      max:
+        xyz: [0.2, 0.0, 0.5]
+      destination:
+        xyz: [0.0, -0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_1_external_right:
+      frame: shipping_box_1::box_base
+      min:
+        xyz: [-0.2, 0.0, 0.0]
+      max:
+        xyz: [0.2, 0.35, 0.5]
+      destination:
+        xyz: [0.0, 0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_2_external_left:
+      frame: shipping_box_2::box_base
+      min:
+        xyz: [-0.2, -0.35, 0.0]
+      max:
+        xyz: [0.2, 0.0, 0.5]
+      destination:
+        xyz: [0.0, -0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_2_external_right:
+      frame: shipping_box_2::box_base
+      min:
+        xyz: [-0.2, 0.0, 0.0]
+      max:
+        xyz: [0.2, 0.35, 0.5]
+      destination:
+        xyz: [0.0, 0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_3_external_left:
+      frame: shipping_box_3::box_base
+      min:
+        xyz: [-0.2, -0.35, 0.0]
+      max:
+        xyz: [0.2, 0.0, 0.5]
+      destination:
+        xyz: [0.0, -0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_3_external_right:
+      frame: shipping_box_3::box_base
+      min:
+        xyz: [-0.2, 0.0, 0.0]
+      max:
+        xyz: [0.2, 0.35, 0.5]
+      destination:
+        xyz: [0.0, 0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_4_external_left:
+      frame: shipping_box_4::box_base
+      min:
+        xyz: [-0.2, -0.35, 0.0]
+      max:
+        xyz: [0.2, 0.0, 0.5]
+      destination:
+        xyz: [0.0, -0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_4_external_right:
+      frame: shipping_box_4::box_base
+      min:
+        xyz: [-0.2, 0.0, 0.0]
+      max:
+        xyz: [0.2, 0.35, 0.5]
+      destination:
+        xyz: [0.0, 0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_5_external_left:
+      frame: shipping_box_5::box_base
+      min:
+        xyz: [-0.2, -0.35, 0.0]
+      max:
+        xyz: [0.2, 0.0, 0.5]
+      destination:
+        xyz: [0.0, -0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+    shipping_box_5_external_right:
+      frame: shipping_box_5::box_base
+      min:
+        xyz: [-0.2, 0.0, 0.0]
+      max:
+        xyz: [0.2, 0.35, 0.5]
+      destination:
+        xyz: [0.0, 0.65, 0.12]
+        rpy: [0, 0, 0.2]
+      product_type_to_drop: gear_part
+
+faulty_products:
+  - disk_part_143
+  - disk_part_18
+
+random_seed: 8
