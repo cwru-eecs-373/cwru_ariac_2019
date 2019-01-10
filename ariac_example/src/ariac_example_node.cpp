@@ -118,13 +118,12 @@ public:
     // Fill the names of the joints to be controlled.
     // Note that the vacuum_gripper_joint is not controllable.
     msg.joint_names.clear();
-    msg.joint_names.push_back("iiwa_joint_1");
-    msg.joint_names.push_back("iiwa_joint_2");
-    msg.joint_names.push_back("iiwa_joint_3");
-    msg.joint_names.push_back("iiwa_joint_4");
-    msg.joint_names.push_back("iiwa_joint_5");
-    msg.joint_names.push_back("iiwa_joint_6");
-    msg.joint_names.push_back("iiwa_joint_7");
+    msg.joint_names.push_back("shoulder_pan_joint");
+    msg.joint_names.push_back("shoulder_lift_joint");
+    msg.joint_names.push_back("elbow_joint");
+    msg.joint_names.push_back("wrist_1_joint");
+    msg.joint_names.push_back("wrist_2_joint");
+    msg.joint_names.push_back("wrist_3_joint");
     msg.joint_names.push_back("linear_arm_actuator_joint");
     // Create one point in the trajectory.
     msg.points.resize(1);

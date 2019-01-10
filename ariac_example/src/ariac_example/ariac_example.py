@@ -121,13 +121,12 @@ class MyCompetitionClass:
         self.last_gripper_state_print = time.time()
         self.has_been_zeroed = False
         self.arm_joint_names = [
-            'iiwa_joint_1',
-            'iiwa_joint_2',
-            'iiwa_joint_3',
-            'iiwa_joint_4',
-            'iiwa_joint_5',
-            'iiwa_joint_6',
-            'iiwa_joint_7',
+            'shoulder_pan_joint',
+            'shoulder_lift_joint',
+            'elbow_joint',
+            'wrist_1_joint',
+            'wrist_2_joint',
+            'wrist_3_joint',
             'linear_arm_actuator_joint'
         ]
 
