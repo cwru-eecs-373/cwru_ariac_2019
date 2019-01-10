@@ -38,29 +38,12 @@ template_files = [
     os.path.join(launch_dir, 'gear.urdf.xacro.template'),
 ]
 arm_configs = {
-    'iiwa14': {
+    'ur10': {
         'pose': {
-            'xyz': [-0.05, 1.0, 0.6],
+            'xyz': [0.0, 1.0, 0.7],
             'rpy': [0.0, 0.0, 0.0]
         },
         'conveyor_offset': [-0.6, 0, 0.17],
-        'default_initial_joint_states': {
-            'iiwa_joint_1': 0,
-            'iiwa_joint_2': 0,
-            'iiwa_joint_3': 0,
-            'iiwa_joint_4': 0,
-            'iiwa_joint_5': 0,
-            'iiwa_joint_6': 0,
-            'iiwa_joint_7': 0,
-            'linear_arm_actuator_joint': 0,
-        },
-    },
-    'ur10': {
-        'pose': {
-            'xyz': [0.3, 1.0, 0.7],
-            'rpy': [0.0, 0.0, 0.0]
-        },
-        'conveyor_offset': [-0.3, 0, 0.17],
         'default_initial_joint_states': {
             'elbow_joint': 2.14,
             'linear_arm_actuator_joint': 0,
@@ -73,7 +56,7 @@ arm_configs = {
     },
 }
 default_arm_dict = {
-    'type': 'iiwa14'
+    'type': 'ur10'
 }
 possible_products = [
     'disk_part',
@@ -582,7 +565,7 @@ def prepare_template_data(config_dict, args):
     models_over_bins = {}
     for key, value in config_dict.items():
         if key == 'arm':
-            print("Warning: ignoring 'arm' entry (iiwa14 is always used).", file=sys.stderr)
+            print("Warning: ignoring 'arm' entry (ur10 is always used).", file=sys.stderr)
         elif key == 'sensors':
             template_data['sensors'].update(
                 create_sensor_infos(value))

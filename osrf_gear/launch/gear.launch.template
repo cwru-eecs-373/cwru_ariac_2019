@@ -49,24 +49,12 @@
 initial_joint_states_string = \
   ' '.join(['-J {0} {1}'.format(k, v) for k, v in arm.initial_joint_states.items()])
 }@
-@[if arm.type == 'ur10']@
-
   <!-- load ur10 -->
   <include file="$(find osrf_gear)/launch/ur10/ur10.xml">
     <arg name="limited" value="$(arg limited)" />
     <arg name="extra_spawn_model_args" value="@(initial_joint_states_string)" />
     <arg name="set_robot_description" value="false" />
   </include>
-
-@[end if]@
-@[if arm.type == 'iiwa14']@
-  <!-- load iiwa -->
-  <include file="$(find osrf_gear)/vendor/iiwa_gazebo/launch/iiwa_gazebo.launch">
-    <arg name="robot_name" value="ariac" />
-    <arg name="hardware_interface" value="EffortJointInterface" />
-    <arg name="extra_spawn_model_args" value="@(initial_joint_states_string)" />
-  </include>
-@[end if]@
 @[end if]@
 
 @[if options['spawn_extra_models']]@
