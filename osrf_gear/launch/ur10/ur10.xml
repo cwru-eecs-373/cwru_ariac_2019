@@ -3,6 +3,7 @@
   <arg name="limited" default="false"/>
   <arg name="gazebo_namespace" default="/gazebo" />
   <arg name="set_robot_description" default="true" />
+  <arg name="robot_name" default="robot" />
   <!-- This is typically used to pass initial joint states for the arm into this file. -->
   <arg name="extra_spawn_model_args" default="
         -J shoulder_pan_joint 0
@@ -22,12 +23,11 @@
           -gazebo_namespace $(arg gazebo_namespace)
           -urdf
           -param robot_description
-          -model robot
+          -model $(arg robot_name)
           $(arg extra_spawn_model_args)
           -x 0.0
           -y -0.0
-          -z -0.0
-          -unpause"
+          -z -0.0"
         respawn="false" output="screen">
   </node>
 
@@ -38,5 +38,4 @@
   <rosparam file="$(find osrf_gear)/launch/ur10/arm_controller_ur10_custom.yaml" ns="ariac" command="load"/>
   <node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager"
         args="spawn ariac/arm" respawn="false" output="screen"/>
-
 </launch>

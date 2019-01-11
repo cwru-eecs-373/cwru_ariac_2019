@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-<xacro:macro name="create_vacuum_gripper" params="wrist_link *origin **grippable_model_types **drops_info">
+<xacro:macro name="create_vacuum_gripper" params="wrist_link arm_namespace *origin **grippable_model_types **drops_info">
 
   <link name="vacuum_gripper_link">
     <inertial>
@@ -62,7 +62,7 @@
       <suction_cup_link>vacuum_gripper_link</suction_cup_link>
 
       <!-- ROS -->
-      <robot_namespace>/ariac</robot_namespace>
+      <robot_namespace>${arm_namespace}</robot_namespace>
       <control_topic>gripper/control</control_topic>
       <state_topic>gripper/state</state_topic>
     </plugin>

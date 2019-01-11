@@ -37,8 +37,10 @@ template_files = [
     os.path.join(launch_dir, 'gear.launch.template'),
     os.path.join(launch_dir, 'gear.urdf.xacro.template'),
 ]
+arm_template_file = os.path.join(launch_dir, 'arm.urdf.xacro.template')
 arm_configs = {
-    'ur10': {
+    'arm1': {
+        'arm_type': 'ur10',
         'pose': {
             'xyz': [0.0, 1.5, 0.7],
             'rpy': [0.0, 0.0, 0.0]
@@ -53,9 +55,22 @@ arm_configs = {
             'wrist_3_joint': 0,
         }
     },
-}
-default_arm_dict = {
-    'type': 'ur10'
+    'arm2': {
+        'arm_type': 'ur10',
+        'pose': {
+            'xyz': [0.0, 0.5, 0.7],
+            'rpy': [0.0, 0.0, 0.0]
+        },
+        'default_initial_joint_states': {
+            'elbow_joint': 2.14,
+            'linear_arm_actuator_joint': 0,
+            'shoulder_lift_joint': -2.0,
+            'shoulder_pan_joint': 3.14,
+            'wrist_1_joint': 3.27,
+            'wrist_2_joint': -1.51,
+            'wrist_3_joint': 0,
+        }
+    },
 }
 possible_products = [
     'disk_part',
@@ -227,7 +242,8 @@ def expand_yaml_substitutions(yaml_dict):
 
 
 class ArmInfo:
-    def __init__(self, arm_type, initial_joint_states, pose):
+    def __init__(self, name, arm_type, initial_joint_states, pose):
+        self.name = name
         self.type = arm_type
         self.initial_joint_states = initial_joint_states
         self.pose = pose
@@ -310,20 +326,11 @@ def create_pose_info(pose_dict, offset=None):
     return PoseInfo(xyz, rpy)
 
 
-def create_arm_info(arm_dict):
-    arm_type = get_required_field('arm', arm_dict, 'type')
-    if arm_type not in arm_configs:
-        print("Error: arm type '{0}' is not one of the valid arm entries: {1}"
-              .format(arm_type, arm_configs), file=sys.stderr)
-        sys.exit(1)
-    for key in arm_dict:
-        if key != 'type':
-            print(
-                "Warning: ignoring unknown entry in '{0}': {1}"
-                .format('arm', key), file=sys.stderr)
-    initial_joint_states = arm_configs[arm_type]['default_initial_joint_states']
-    pose = create_pose_info(arm_configs[arm_type]['pose'])
-    return ArmInfo(arm_type, initial_joint_states, pose)
+def create_arm_info(name, arm_dict):
+    arm_type = arm_dict['arm_type']
+    initial_joint_states = arm_dict['default_initial_joint_states']
+    pose = create_pose_info(arm_dict['pose'])
+    return ArmInfo(name, arm_type, initial_joint_states, pose)
 
 
 def create_sensor_info(name, sensor_data, allow_protected_sensors=False, offset=None):
@@ -532,9 +539,8 @@ def create_options_info(options_dict):
 
 
 def prepare_template_data(config_dict, args):
-    arm_info = create_arm_info(config_dict.pop('arm_type'))
     template_data = {
-        'arm': arm_info,
+        'arms': [create_arm_info(name, conf) for name, conf in arm_configs.items()],
         'sensors': create_sensor_infos(default_sensors, allow_protected_sensors=True),
         'models_to_insert': {},
         'models_to_spawn': {},
@@ -602,6 +608,12 @@ def generate_files(template_data):
         with open(template_file, 'r') as f:
             data = f.read()
         files[template_file] = em.expand(data, template_data)
+    # Generate files for each arm
+    for arm_info in template_data['arms']:
+        template_data['arm'] = arm_info
+        with open(arm_template_file, 'r') as f:
+            data = f.read()
+        files[arm_info.name + '.urdf.xacro'] = em.expand(data, template_data)
     return files
 
 
@@ -624,7 +636,6 @@ def main(sysargv=None):
     random_seed = expanded_dict_config.pop('random_seed', None)
     initialize_model_id_mappings(random_seed)
 
-    expanded_dict_config['arm_type'] = default_arm_dict
     template_data = prepare_template_data(expanded_dict_config, args)
     files = generate_files(template_data)
     if not args.dry_run and not os.path.isdir(args.output):
@@ -650,6 +661,7 @@ def main(sysargv=None):
         os.path.join(args.output, 'gear.launch'),
         'world_path:=' + os.path.join(args.output, 'gear.world'),
         'gear_urdf_xacro:=' + os.path.join(args.output, 'gear.urdf.xacro'),
+        'arm_urdf_dir:=' + args.output,
     ]
     if args.log_to_file:
         cmd.append('gazebo_ros_output:=log')

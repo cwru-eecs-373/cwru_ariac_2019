@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"
+       name="@(arm.name)">
+
+  <!-- include the arm xacro -->
+  <xacro:include filename="$(find osrf_gear)/launch/ur10/ur10.urdf.xacro" />
+  <xacro:property name="wrist_link" value="wrist_3_link" />
+  <xacro:property name="base_link" value="base_link" />
+
+  <xacro:include filename="$(find osrf_gear)/launch/vacuum_gripper/vacuum_gripper.urdf.xacro" />
+  <xacro:include filename="$(find osrf_gear)/launch/linear_arm_actuator/linear_arm_actuator.urdf.xacro" />
+
+  <xacro:create_vacuum_gripper wrist_link="${wrist_link}" arm_namespace="/ariac/@(arm.name)">
+    <origin xyz="0 0.1 0" rpy="${90 * 0.0174533} 0 0" />
+
+    <grippable_model_types>
+@[for model_name in possible_products]@
+        <type>@(model_name)</type>
+@[end for]@
+    </grippable_model_types>
+    <drops_info>
+@[if drops]@
+      <drops>
+        <drop_regions>
+@[for drop_region in drops['drop_regions']]@
+          <drop_region>
+            <min>@(' '.join(drop_region.min))</min>
+            <max>@(' '.join(drop_region.max))</max>
+            <destination>@(' '.join(drop_region.destination.xyz)) @(' '.join(drop_region.destination.rpy))</destination>
+            <type>@(drop_region.type)</type>
+@[if drop_region.frame != "world"]@
+            <frame>@(drop_region.frame)</frame>
+@[end if]@
+          </drop_region>
+@[end for]@
+        </drop_regions>
+      </drops>
+@[end if]@
+    </drops_info>
+  </xacro:create_vacuum_gripper>
+
+  <xacro:create_linear_arm_actuator base_link="${base_link}" />
+
+  <link name="world" />
+
+  <joint name="world_joint" type="fixed">
+    <parent link="world" />
+    <child link="linear_arm_actuator" />
+    <origin xyz="@(arm.pose.xyz[0]) @(arm.pose.xyz[1]) @(arm.pose.xyz[2])" rpy="@(arm.pose.rpy[0]) @(arm.pose.rpy[1]) @(arm.pose.rpy[2])" />
+  </joint>
+</robot>
