@@ -67,16 +67,16 @@
   <!-- if use_position_interface create PositionJointInterface based transmissions -->
   <xacro:unless value="$(arg use_velocity_interface)">
   <xacro:unless value="$(arg use_effort_interface)">
-    <xacro:linear_arm_actuator_transmission_impl joint_interface="PositionJointInterface" />
+    <xacro:linear_arm_actuator_transmission_impl joint_interface="hardware_interface/PositionJointInterface" />
   </xacro:unless>
   </xacro:unless>
   <!-- if use_velocity_interface create VelocityJointInterface based transmissions -->
   <xacro:if value="$(arg use_velocity_interface)">
-    <xacro:linear_arm_actuator_transmission_impl joint_interface="VelocityJointInterface" />
+    <xacro:linear_arm_actuator_transmission_impl joint_interface="hardware_interface/VelocityJointInterface" />
   </xacro:if>
   <!-- if use_effort_interface create EffortJointInterface based transmissions -->
   <xacro:if value="$(arg use_effort_interface)">
-    <xacro:linear_arm_actuator_transmission_impl joint_interface="EffortJointInterface" />
+    <xacro:linear_arm_actuator_transmission_impl joint_interface="hardware_interface/EffortJointInterface" />
   </xacro:if>
 
 </xacro:macro>
