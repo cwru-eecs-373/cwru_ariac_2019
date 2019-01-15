@@ -238,10 +238,10 @@
         <contact_sensor_name>box_base_contact</contact_sensor_name>
         <clear_shipping_box_service_name>/ariac/@(shipping_box_name)/clear_shipping_box</clear_shipping_box_service_name>
         <lock_models_service_name>/ariac/@(shipping_box_name)/lock_models</lock_models_service_name>
-        <toggle_visuals_at>@(1.2 + conveyor_offset[0]) -3.2 @(0.4 + conveyor_offset[2])</toggle_visuals_at>
-        <clear_models_at>@(1.2 + conveyor_offset[0]) -3.2 @(0.4 + conveyor_offset[2])</clear_models_at>
-        <trigger_animation_at>@(1.2 + conveyor_offset[0]) -3.2 @(0.4 + conveyor_offset[2])</trigger_animation_at>
-        <end_animation_at>@(1.16 + conveyor_offset[0]) -4.4 0.1</end_animation_at>
+        <toggle_visuals_at>0.6 -3.2 0.57</toggle_visuals_at>
+        <clear_models_at>0.6 -3.2 0.57</clear_models_at>
+        <trigger_animation_at>0.6 -3.2 0.57</trigger_animation_at>
+        <end_animation_at>0.56 -4.4 0.1</end_animation_at>
         <update_rate>20</update_rate>
         <faulty_products>
 @[for product_name, product_info in faulty_products.items()]@

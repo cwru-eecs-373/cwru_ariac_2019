@@ -99,7 +99,7 @@ def expand_snippet(filename, data=locals()):
     </include>
     <include>
       <uri>model://shipping_container_conveyor_tall_ariac</uri>
-      <pose>@(0.64 + conveyor_offset[0]) @(-1.0 + conveyor_offset[1]) 0 0 0 0</pose>
+      <pose>0.04 -1.0 0 0 0 0</pose>
     </include>
 
 @[for bin_name, bin_pose in bins.items()]@
@@ -159,7 +159,7 @@ expand_snippet('laser_profiler.sdf.template')
     <!-- start with an extra box in the middle of the belt -->
 @{shipping_box_name = 'shipping_box_' + str(shipping_boxes_on_belt)}@
     <model name="@(shipping_box_name)">
-      <pose>@(1.15 + conveyor_offset[0]) 0.9 @(0.45 + conveyor_offset[2]) 0 0 0</pose>
+      <pose>0.55 0.9 0.62 0 0 0</pose>
 @{
 expand_snippet('shipping_box.sdf.template')
 }@
@@ -170,7 +170,7 @@ expand_snippet('shipping_box.sdf.template')
     <!-- start with a box on the belt -->
 @{shipping_box_name = 'shipping_box_' + str(shipping_boxes_on_belt)}@
     <model name="@(shipping_box_name)">
-      <pose>@(1.15 + conveyor_offset[0]) 4.0 @(0.7 + conveyor_offset[2]) 0 0 0</pose>
+      <pose>0.55 4.0 0.87 0 0 0</pose>
 @{
 expand_snippet('shipping_box.sdf.template')
 }@
@@ -219,14 +219,14 @@ expand_snippet('shipping_box.sdf.template')
         <update_rate>10</update_rate>
         <submit_shipment_service_name>/ariac/submit_shipment</submit_shipment_service_name>
         <waiting_box_topic>/ariac/waiting_shipping_box</waiting_box_topic>
-        <collection_point>@(1.4 + conveyor_offset[0]) @(-4.4 + conveyor_offset[1]) @(0.8 + conveyor_offset[2])</collection_point>
+        <collection_point>0.8 -4.4 0.97</collection_point>
       </plugin>
     </model>
 
     <!-- an invisible conveyor belt -->
       <include>
         <name>conveyor_belt</name>
-        <pose>@(0 + conveyor_offset[0]) 0 @(conveyor_offset[2]) 0 0 0</pose>
+        <pose>-0.6 0 0.17 0 0 0</pose>
         <uri>model://conveyor_belt_tall_ariac</uri>
       </include>
 
