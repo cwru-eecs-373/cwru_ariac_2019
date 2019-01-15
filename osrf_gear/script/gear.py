@@ -40,10 +40,9 @@ template_files = [
 arm_configs = {
     'ur10': {
         'pose': {
-            'xyz': [0.0, 1.0, 0.7],
+            'xyz': [0.0, 1.5, 0.7],
             'rpy': [0.0, 0.0, 0.0]
         },
-        'conveyor_offset': [-0.6, 0, 0.17],
         'default_initial_joint_states': {
             'elbow_joint': 2.14,
             'linear_arm_actuator_joint': 0,
@@ -78,21 +77,21 @@ default_sensors = {
     'congestion_sensor': {
         'type': 'break_beam',
         'pose': {
-            'xyz': [0.66, -3.05, 0.45],
+            'xyz': [0.06, -3.05, 0.62],
             'rpy': [0.0, 0.0, 0.0]
         }
     },
     'quality_control_sensor_1': {
         'type': 'quality_control',
         'pose': {
-            'xyz': [1.15, 1.1, 1.2],
+            'xyz': [0.55, 1.1, 1.37],
             'rpy': [-1.5707, 1.5707, -3.1416]
         }
     },
     'quality_control_sensor_2': {
         'type': 'quality_control',
         'pose': {
-            'xyz': [1.15, -0.7, 1.2],
+            'xyz': [0.55, -0.7, 1.37],
             'rpy': [-1.5707, 1.5707, -3.1416]
         }
     },
@@ -324,8 +323,7 @@ def create_arm_info(arm_dict):
                 .format('arm', key), file=sys.stderr)
     initial_joint_states = arm_configs[arm_type]['default_initial_joint_states']
     pose = create_pose_info(arm_configs[arm_type]['pose'])
-    conveyor_offset = arm_configs[arm_type]['conveyor_offset']
-    return ArmInfo(arm_type, initial_joint_states, pose), conveyor_offset
+    return ArmInfo(arm_type, initial_joint_states, pose)
 
 
 def create_sensor_info(name, sensor_data, allow_protected_sensors=False, offset=None):
@@ -534,11 +532,10 @@ def create_options_info(options_dict):
 
 
 def prepare_template_data(config_dict, args):
-    arm_info, conveyor_offset = create_arm_info(config_dict.pop('arm_type'))
+    arm_info = create_arm_info(config_dict.pop('arm_type'))
     template_data = {
         'arm': arm_info,
-        'conveyor_offset': conveyor_offset,
-        'sensors': create_sensor_infos(default_sensors, allow_protected_sensors=True, offset=conveyor_offset),
+        'sensors': create_sensor_infos(default_sensors, allow_protected_sensors=True),
         'models_to_insert': {},
         'models_to_spawn': {},
         'belt_models': create_belt_model_infos(default_belt_models),
@@ -564,9 +561,7 @@ def prepare_template_data(config_dict, args):
 
     models_over_bins = {}
     for key, value in config_dict.items():
-        if key == 'arm':
-            print("Warning: ignoring 'arm' entry (ur10 is always used).", file=sys.stderr)
-        elif key == 'sensors':
+        if key == 'sensors':
             template_data['sensors'].update(
                 create_sensor_infos(value))
         elif key == 'models_over_bins':
