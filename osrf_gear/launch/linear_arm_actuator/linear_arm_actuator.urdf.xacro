@@ -18,23 +18,6 @@
                izz="0.1" />
       <mass value="1" />
     </inertial>
-
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <geometry>
-        <box size="${base_len} ${actuator_len} ${actuator_height}" />
-      </geometry>
-      <material name="Grey">
-        <color rgba="0.2 0.2 0.2 1.0"/>
-      </material>
-    </visual>
-
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <geometry>
-        <box size="${base_len} ${actuator_len} ${actuator_height}" />
-      </geometry>
-    </collision>
   </link>
 
   <gazebo reference="linear_arm_actuator">
