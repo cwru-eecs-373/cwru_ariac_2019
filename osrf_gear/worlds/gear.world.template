@@ -433,5 +433,31 @@ count[product.type] = id + 1
       <update_rate>10</update_rate>
     </plugin>
 
+    <!-- A visual and collision of the linear rail the robots ride on -->
+    <model name="linear_rail">
+      <pose>0 1.0 0.7 0 0 0</pose>
+      <static>true</static>
+      <link name="rail_link">
+        <visual name="rail_link_visual">
+          <geometry>
+            <box>
+              <size>0.2 4.0 0.1</size>
+            </box>
+          </geometry>
+          <material>
+            <script>Gazebo/Grey</script>
+          </material>
+        </visual>
+
+        <collision name="rail_link_collision">
+          <geometry>
+            <box>
+              <size>0.2 4.0 0.1</size>
+            </box>
+          </geometry>
+        </collision>
+      </link>
+    </model>
+
   </world>
 </sdf>
