@@ -396,7 +396,7 @@ install(TARGETS ${target_name}
 ## Install ##
 #############
 
-install(PROGRAMS script/gear.py script/startup.sh
+install(PROGRAMS script/gear.py script/gazebo_unpauser.py script/startup.sh
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
