@@ -34,6 +34,7 @@
 #include <gazebo/util/system.hh>
 #include <osrf_gear/ARIAC.hh>
 #include "SideContactPlugin.hh"
+#include <ignition/math/Pose3.hh>
 
 namespace gazebo
 {
@@ -109,7 +110,7 @@ namespace gazebo
     protected: bool toggleVisualsAtPose = false;
 
     /// \brief The pose at which visuals should be toggled.
-    protected: math::Vector3 toggleVisualsAt;
+    protected: ignition::math::Vector3d toggleVisualsAt;
 
     /// \brief Publisher for toggling the visuals.
     protected: transport::PublisherPtr toggleVisualsPub;
@@ -118,7 +119,7 @@ namespace gazebo
     protected: bool clearModelsAtPose = false;
 
     /// \brief The pose at which models should be cleared.
-    protected: math::Vector3 clearModelsAt;
+    protected: ignition::math::Vector3d clearModelsAt;
 
     /// \brief Service that locks models to the shipping box
     public: ros::ServiceServer lockModelsServer;
@@ -138,10 +139,10 @@ namespace gazebo
     protected: bool triggerAnimationAtPose = false;
 
     /// \brief The pose at which the animation should be triggered.
-    protected: math::Vector3 triggerAnimationAt;
+    protected: ignition::math::Vector3d triggerAnimationAt;
 
     /// \brief The pose at which the animation should end.
-    protected: math::Vector3 endAnimationAt;
+    protected: ignition::math::Vector3d endAnimationAt;
 
     /// \brief Animation for going down the ramp
     public: gazebo::common::PoseAnimationPtr rampAnimation;

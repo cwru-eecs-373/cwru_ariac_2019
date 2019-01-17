@@ -79,10 +79,10 @@ namespace gazebo
               public: std::string type;
 
               /// \brief Object type.
-              public: math::Box dropRegion;
+              public: ignition::math::Box dropRegion;
 
               /// \brief Destination where objects are teleported to after a drop
-              public: math::Pose destination;
+              public: ignition::math::Pose3d destination;
 
               /// \brief Reference frame of the drop region/destination
               public: physics::EntityPtr frame;
@@ -206,9 +206,9 @@ VacuumGripperPlugin::VacuumGripperPlugin()
 /////////////////////////////////////////////////
 VacuumGripperPlugin::~VacuumGripperPlugin()
 {
-  if (this->dataPtr->world && this->dataPtr->world->GetRunning())
+  if (this->dataPtr->world && this->dataPtr->world->Running())
   {
-    auto mgr = this->dataPtr->world->GetPhysicsEngine()->GetContactManager();
+    auto mgr = this->dataPtr->world->Physics()->GetContactManager();
     mgr->RemoveFilter(this->Name());
   }
 }
@@ -220,12 +220,12 @@ void VacuumGripperPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->dataPtr->world = this->dataPtr->model->GetWorld();
 
   this->dataPtr->node = transport::NodePtr(new transport::Node());
-  this->dataPtr->node->Init(this->dataPtr->world->GetName());
+  this->dataPtr->node->Init(this->dataPtr->world->Name());
   this->dataPtr->name = _sdf->Get<std::string>("name");
 
   // Create the joint that will attach the objects to the suction cup
   this->dataPtr->fixedJoint =
-      this->dataPtr->world->GetPhysicsEngine()->CreateJoint(
+      this->dataPtr->world->Physics()->CreateJoint(
         "fixed", this->dataPtr->model);
   this->dataPtr->fixedJoint->SetName(this->dataPtr->model->GetName() +
       "__vacuum_gripper_fixed_joint__");
@@ -296,7 +296,7 @@ void VacuumGripperPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
       }
 
       sdf::ElementPtr minElem = dropRegionElem->GetElement("min");
-      gazebo::math::Vector3 min = dropRegionElem->Get<math::Vector3>("min");
+      ignition::math::Vector3d min = dropRegionElem->Get<ignition::math::Vector3d>("min");
 
       if (!dropRegionElem->HasElement("max"))
       {
@@ -306,7 +306,7 @@ void VacuumGripperPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
       }
 
       sdf::ElementPtr maxElem = dropRegionElem->GetElement("max");
-      gazebo::math::Vector3 max = dropRegionElem->Get<math::Vector3>("max");
+      ignition::math::Vector3d max = dropRegionElem->Get<ignition::math::Vector3d>("max");
 
       // Parse the destination.
       if (!dropRegionElem->HasElement("destination"))
@@ -331,7 +331,7 @@ void VacuumGripperPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
       if (dropRegionElem->HasElement("frame"))
       {
         std::string dropFrameName = dropRegionElem->Get<std::string>("frame");
-        dropFrame = this->dataPtr->world->GetEntity(dropFrameName);
+        dropFrame = this->dataPtr->world->EntityByName(dropFrameName);
         if (!dropFrame) {
           gzthrow(std::string("The frame '") + dropFrameName + "' does not exist");
         }
@@ -345,8 +345,8 @@ void VacuumGripperPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
       sdf::ElementPtr typeElement = dropRegionElem->GetElement("type");
       std::string type = typeElement->Get<std::string>();
 
-      math::Box dropRegion = math::Box(min, max);
-      math::Pose destination = dstElement->Get<math::Pose>();
+      ignition::math::Box dropRegion = ignition::math::Box(min, max);
+      ignition::math::Pose3d destination = dstElement->Get<ignition::math::Pose3d>();
 
       VacuumGripperPluginPrivate::DropObject dropObject {type, dropRegion, destination, dropFrame};
       this->dataPtr->objectsToDrop.push_back(dropObject);
@@ -372,7 +372,7 @@ void VacuumGripperPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (!this->dataPtr->collisions.empty())
   {
     // Create a filter to receive collision information
-    auto mgr = this->dataPtr->world->GetPhysicsEngine()->GetContactManager();
+    auto mgr = this->dataPtr->world->Physics()->GetContactManager();
     auto topic = mgr->CreateFilter(this->Name(), this->dataPtr->collisions);
     if (!this->dataPtr->contactSub)
     {
@@ -466,19 +466,19 @@ void VacuumGripperPlugin::OnUpdate()
         continue;
       }
 
-      auto objPose = this->dataPtr->dropAttachedModel->GetWorldPose();
+      auto objPose = this->dataPtr->dropAttachedModel->WorldPose();
       ignition::math::Pose3d dropFramePose;
       ignition::math::Matrix4d dropFrameTransMat;
       if (dropObject.frame)
       {
         // Transform the pose of the object from world frame to the specified frame.
-        dropFramePose = dropObject.frame->GetWorldPose().Ign();
+        dropFramePose = dropObject.frame->WorldPose();
         dropFrameTransMat = ignition::math::Matrix4d(dropFramePose);
-        ignition::math::Matrix4d objPoseWorld(objPose.Ign());
+        ignition::math::Matrix4d objPoseWorld(objPose);
         objPose = (dropFrameTransMat.Inverse() * objPoseWorld).Pose();
       }
 
-      if (!dropObject.dropRegion.Contains(objPose.pos))
+      if (!dropObject.dropRegion.Contains(objPose.Pos()))
       {
         continue;
       }
@@ -490,14 +490,14 @@ void VacuumGripperPlugin::OnUpdate()
       if (dropObject.frame)
       {
         // Determine the destination in the world frame.
-        ignition::math::Matrix4d objDestLocal(objDest.Ign());
+        ignition::math::Matrix4d objDestLocal(objDest);
         objDest = (dropFrameTransMat * objDestLocal).Pose();
       }
 
       // Teleport it to the destination.
       this->dataPtr->dropAttachedModel->SetWorldPose(objDest);
-      this->dataPtr->dropAttachedModel->SetLinearVel(math::Vector3::Zero);
-      this->dataPtr->dropAttachedModel->SetLinearAccel(math::Vector3::Zero);
+      this->dataPtr->dropAttachedModel->SetLinearVel(ignition::math::Vector3d::Zero);
+      this->dataPtr->dropAttachedModel->SetLinearAccel(ignition::math::Vector3d::Zero);
 
       this->dataPtr->droppedObjects.push_back(this->dataPtr->attachedObjType);
 
@@ -524,9 +524,9 @@ void VacuumGripperPlugin::OnContacts(ConstContactsPtr &_msg)
   for (int i = 0; i < _msg->contact_size(); ++i)
   {
     CollisionPtr collision1 = boost::dynamic_pointer_cast<Collision>(
-        this->dataPtr->world->GetEntity(_msg->contact(i).collision1()));
+        this->dataPtr->world->EntityByName(_msg->contact(i).collision1()));
     CollisionPtr collision2 = boost::dynamic_pointer_cast<Collision>(
-        this->dataPtr->world->GetEntity(_msg->contact(i).collision2()));
+        this->dataPtr->world->EntityByName(_msg->contact(i).collision2()));
 
     if ((collision1 && !collision1->IsStatic()) &&
         (collision2 && !collision2->IsStatic()))
@@ -557,7 +557,7 @@ bool VacuumGripperPlugin::GetContactNormal()
     {
       // Model in contact is the second name
       this->dataPtr->modelCollision = boost::dynamic_pointer_cast<Collision>(
-        this->dataPtr->world->GetEntity(name1));
+        this->dataPtr->world->EntityByName(name1));
       this->dataPtr->modelContactNormal = -1 * msgs::ConvertIgn(this->dataPtr->contacts[i].normal(0));
       return true;
     }
@@ -567,7 +567,7 @@ bool VacuumGripperPlugin::GetContactNormal()
     {
       // Model in contact is the first name -- frames are reversed
       this->dataPtr->modelCollision = boost::dynamic_pointer_cast<Collision>(
-        this->dataPtr->world->GetEntity(name2));
+        this->dataPtr->world->EntityByName(name2));
       this->dataPtr->modelContactNormal = msgs::ConvertIgn(this->dataPtr->contacts[i].normal(0));
       return true;
     }
@@ -591,7 +591,7 @@ void VacuumGripperPlugin::HandleAttach()
   this->dataPtr->attached = true;
 
   this->dataPtr->fixedJoint->Load(this->dataPtr->suctionCupLink,
-      this->dataPtr->modelCollision->GetLink(), math::Pose());
+      this->dataPtr->modelCollision->GetLink(), ignition::math::Pose3d());
   this->dataPtr->fixedJoint->Init();
 
   auto modelPtr = this->dataPtr->modelCollision->GetLink()->GetModel();
@@ -676,8 +676,8 @@ bool VacuumGripperPlugin::CheckModelContact()
     }
 
     // Only consider models with collision normals aligned with the normal of the gripper
-    auto gripperLinkPose = this->dataPtr->suctionCupLink->GetWorldPose().Ign();
-    math::Vector3 gripperLinkNormal =
+    auto gripperLinkPose = this->dataPtr->suctionCupLink->WorldPose();
+    ignition::math::Vector3d gripperLinkNormal =
       gripperLinkPose.Rot().RotateVector(ignition::math::Vector3d(0, 0, 1));
     double alignment = gripperLinkNormal.Dot(this->dataPtr->modelContactNormal);
 

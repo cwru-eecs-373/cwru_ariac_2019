@@ -32,7 +32,7 @@ SideContactPlugin::SideContactPlugin() : ModelPlugin()
 /////////////////////////////////////////////////
 SideContactPlugin::~SideContactPlugin()
 {
-  event::Events::DisconnectWorldUpdateBegin(this->updateConnection);
+  this->updateConnection.reset();
   this->parentSensor.reset();
   this->world.reset();
 }
@@ -49,7 +49,7 @@ void SideContactPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->model = _model;
   this->world = this->model->GetWorld();
   this->node = transport::NodePtr(new transport::Node());
-  this->node->Init(this->world->GetName());
+  this->node->Init(this->world->Name());
 
   this->contactSensorName = _sdf->Get<std::string>("contact_sensor_name");
   bool sensorFound = this->FindContactSensor();
@@ -108,7 +108,7 @@ void SideContactPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     }
   }
 
-  this->lastUpdateTime = this->world->GetSimTime();
+  this->lastUpdateTime = this->world->SimTime();
 
   // FIXME: how to not hard-code this gazebo prefix?
   std::string contactTopic = "/gazebo/" + this->scopedContactSensorName;
@@ -130,7 +130,7 @@ bool SideContactPlugin::FindContactSensor()
   for (const auto &link : links)
   {
     std::string scopedContactSensorName =
-      this->world->GetName() + "::" + link->GetScopedName() + "::" + this->contactSensorName;
+      this->world->Name() + "::" + link->GetScopedName() + "::" + this->contactSensorName;
     for (unsigned int i = 0; i < link->GetSensorCount(); ++i)
     {
       if (link->GetSensorName(i) == scopedContactSensorName)
@@ -184,7 +184,7 @@ void SideContactPlugin::CalculateContactingLinks()
     }
 
     physics::CollisionPtr collisionPtr =
-      boost::static_pointer_cast<physics::Collision>(this->world->GetEntity(*collision));
+      boost::static_pointer_cast<physics::Collision>(this->world->EntityByName(*collision));
     if (collisionPtr) { // ensure the collision hasn't been deleted
       this->contactingLinks.insert(collisionPtr->GetLink());
     }
@@ -218,7 +218,7 @@ void SideContactPlugin::ClearContactingModels()
     model->SetAutoDisable(true);
     model->SetGravityMode(true);
     model->SetStatic(true);
-    model->SetWorldPose(math::Pose(0 + 0.25*index++, 0, -5, 0, 0, 0));
+    model->SetWorldPose(ignition::math::Pose3d(0 + 0.25*index++, 0, -5, 0, 0, 0));
   }
 }
 
@@ -229,7 +229,7 @@ bool SideContactPlugin::TimeToExecute()
   if (this->updateRate <= 0)
     return true;
 
-  gazebo::common::Time curTime = this->world->GetSimTime();
+  gazebo::common::Time curTime = this->world->SimTime();
   auto dt = (curTime - this->lastUpdateTime).Double();
   if (dt < 0)
   {

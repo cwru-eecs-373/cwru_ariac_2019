@@ -33,7 +33,7 @@ ShippingBoxPlugin::ShippingBoxPlugin() : SideContactPlugin()
 /////////////////////////////////////////////////
 ShippingBoxPlugin::~ShippingBoxPlugin()
 {
-  event::Events::DisconnectWorldUpdateBegin(this->updateConnection);
+  this->updateConnection.reset();
   this->parentSensor.reset();
   this->world.reset();
 }
@@ -47,7 +47,7 @@ void ShippingBoxPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   {
     sdf::ElementPtr toggleVisualsAtElem = _sdf->GetElement("toggle_visuals_at");
     this->toggleVisualsAtPose = true;
-    this->toggleVisualsAt = toggleVisualsAtElem->Get<math::Vector3>();
+    this->toggleVisualsAt = toggleVisualsAtElem->Get<ignition::math::Vector3d>();
     std::string topicName = "/ariac/" + _model->GetName() + "_visual_toggle";
     this->toggleVisualsPub = this->node->Advertise<msgs::GzString>(topicName);
   }
@@ -56,16 +56,16 @@ void ShippingBoxPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   {
     sdf::ElementPtr clearModelsAtElem = _sdf->GetElement("clear_models_at");
     this->clearModelsAtPose = true;
-    this->clearModelsAt = clearModelsAtElem->Get<math::Vector3>();
+    this->clearModelsAt = clearModelsAtElem->Get<ignition::math::Vector3d>();
   }
 
   if (_sdf->HasElement("trigger_animation_at"))
   {
     sdf::ElementPtr triggerAnimationAtElem = _sdf->GetElement("trigger_animation_at");
     this->triggerAnimationAtPose = true;
-    this->triggerAnimationAt = triggerAnimationAtElem->Get<math::Vector3>();
+    this->triggerAnimationAt = triggerAnimationAtElem->Get<ignition::math::Vector3d>();
     sdf::ElementPtr endAnimationAtElem = _sdf->GetElement("end_animation_at");
-    this->endAnimationAt = endAnimationAtElem->Get<math::Vector3>();
+    this->endAnimationAt = endAnimationAtElem->Get<ignition::math::Vector3d>();
   }
 
   if (_sdf->HasElement("nested_animation"))
@@ -139,8 +139,8 @@ void ShippingBoxPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->rampAnimation.reset(
     new gazebo::common::PoseAnimation(this->shippingBoxID, 3/speedFactor, false));
 
-  ignition::math::Vector3d start_position(this->triggerAnimationAt.x, this->triggerAnimationAt.y, this->triggerAnimationAt.z);
-  ignition::math::Vector3d end_position(this->endAnimationAt.x, this->endAnimationAt.y, this->endAnimationAt.z);
+  ignition::math::Vector3d start_position(this->triggerAnimationAt.X(), this->triggerAnimationAt.Y(), this->triggerAnimationAt.Z());
+  ignition::math::Vector3d end_position(this->endAnimationAt.X(), this->endAnimationAt.Y(), this->endAnimationAt.Z());
 
   gazebo::common::PoseKeyFrame *key = this->rampAnimation->CreateKeyFrame(1.0/speedFactor);
   key->Translation(end_position + ignition::math::Vector3d(0, 0.3, 0.2));
@@ -166,7 +166,7 @@ void ShippingBoxPlugin::OnUpdate(const common::UpdateInfo &/*_info*/)
     return;
   }
 
-  if (this->toggleVisualsAtPose && this->model->GetWorldPose().pos.Distance(this->toggleVisualsAt) < 0.3)
+  if (this->toggleVisualsAtPose && this->model->WorldPose().Pos().Distance(this->toggleVisualsAt) < 0.3)
   {
     gzdbg << "Toggling visuals: " << this->model->GetName() << std::endl;
     gazebo::msgs::GzString toggleMsg;
@@ -175,7 +175,7 @@ void ShippingBoxPlugin::OnUpdate(const common::UpdateInfo &/*_info*/)
     this->toggleVisualsAtPose = false;
   }
 
-  if (this->clearModelsAtPose && this->model->GetWorldPose().pos.Distance(this->clearModelsAt) < 0.3)
+  if (this->clearModelsAtPose && this->model->WorldPose().Pos().Distance(this->clearModelsAt) < 0.3)
   {
     gzdbg << "Clearing models: " << this->model->GetName() << std::endl;
     this->ClearContactingModels();
@@ -184,16 +184,16 @@ void ShippingBoxPlugin::OnUpdate(const common::UpdateInfo &/*_info*/)
     this->publishingEnabled = false;
   }
 
-  if (this->triggerAnimationAtPose && this->model->GetWorldPose().pos.Distance(this->triggerAnimationAt) < 0.3)
+  if (this->triggerAnimationAtPose && this->model->WorldPose().Pos().Distance(this->triggerAnimationAt) < 0.3)
   {
     gzdbg << "Triggering ramp animation: " << this->model->GetName() << std::endl;
 
     // Make the current pose the first key frame of the animation (appears smoother).
     gazebo::common::PoseKeyFrame *key = this->rampAnimation->CreateKeyFrame(0.0);
-    gazebo::math::Vector3 pos = this->model->GetWorldPose().pos;
-    gazebo::math::Quaternion ori = this->model->GetWorldPose().rot;
-    key->Translation(ignition::math::Vector3d(pos.x, pos.y, pos.z));
-    key->Rotation(ignition::math::Quaterniond(ori.w, ori.x, ori.y, ori.z));
+    ignition::math::Vector3d pos = this->model->WorldPose().Pos();
+    ignition::math::Quaterniond ori = this->model->WorldPose().Rot();
+    key->Translation(ignition::math::Vector3d(pos.X(), pos.Y(), pos.Z()));
+    key->Rotation(ignition::math::Quaterniond(ori.W(), ori.X(), ori.Y(), ori.Z()));
 
     // Trigger the animation.
     this->rampAnimation->SetTime(0);
@@ -231,7 +231,7 @@ void ShippingBoxPlugin::ProcessContactingModels()
     this->contactingModels.insert(link->GetParentModel());
   }
   this->currentShipment.products.clear();
-  auto shippingBoxPose = this->parentLink->GetWorldPose().Ign();
+  auto shippingBoxPose = this->parentLink->WorldPose();
   for (auto model : this->contactingModels) {
     if (model) {
       model->SetAutoDisable(false);
@@ -246,11 +246,11 @@ void ShippingBoxPlugin::ProcessContactingModels()
       product.isFaulty = it != this->faultyProductNames.end();
 
       // Determine the pose of the product in the frame of the shipping box
-      math::Pose productPose = model->GetWorldPose();
+      ignition::math::Pose3d productPose = model->WorldPose();
       ignition::math::Matrix4d transMat(shippingBoxPose);
-      ignition::math::Matrix4d productPoseMat(productPose.Ign());
+      ignition::math::Matrix4d productPoseMat(productPose);
       product.pose = (transMat.Inverse() * productPoseMat).Pose();
-      product.pose.rot.Normalize();
+      product.pose.Rot().Normalize();
 
       this->currentShipment.products.push_back(product);
     }
@@ -287,13 +287,13 @@ void ShippingBoxPlugin::PublishShipmentMsg()
     osrf_gear::DetectedProduct msgObj;
     msgObj.type = obj.type;
     msgObj.is_faulty = obj.isFaulty;
-    msgObj.pose.position.x = obj.pose.pos.x;
-    msgObj.pose.position.y = obj.pose.pos.y;
-    msgObj.pose.position.z = obj.pose.pos.z;
-    msgObj.pose.orientation.x = obj.pose.rot.x;
-    msgObj.pose.orientation.y = obj.pose.rot.y;
-    msgObj.pose.orientation.z = obj.pose.rot.z;
-    msgObj.pose.orientation.w = obj.pose.rot.w;
+    msgObj.pose.position.x = obj.pose.Pos().X();
+    msgObj.pose.position.y = obj.pose.Pos().Y();
+    msgObj.pose.position.z = obj.pose.Pos().Z();
+    msgObj.pose.orientation.x = obj.pose.Rot().X();
+    msgObj.pose.orientation.y = obj.pose.Rot().Y();
+    msgObj.pose.orientation.z = obj.pose.Rot().Z();
+    msgObj.pose.orientation.w = obj.pose.Rot().W();
 
     // Add the product to the shipment.
     shippingBoxMsg.products.push_back(msgObj);
@@ -322,7 +322,7 @@ void ShippingBoxPlugin::LockContactingModels()
   for (auto model : this->contactingModels)
   {
   // Create the joint that will attach the models
-  fixedJoint = this->world->GetPhysicsEngine()->CreateJoint(
+  fixedJoint = this->world->Physics()->CreateJoint(
         "fixed", this->model);
   auto jointName = this->model->GetName() + "_" + model->GetName() + "__joint__";
   gzdbg << "Creating fixed joint: " << jointName << std::endl;
@@ -349,10 +349,10 @@ void ShippingBoxPlugin::LockContactingModels()
     link->SetGravityMode(false);
 
     // Lift the product slightly because it will fall through the shipping box if the shipping box is animated
-    model->SetWorldPose(model->GetWorldPose() + math::Pose(0,0,0.01,0,0,0));
+    model->SetWorldPose(model->WorldPose() + ignition::math::Pose3d(0,0,0.01,0,0,0));
   }
 
-  fixedJoint->Load(link, this->parentLink, math::Pose());
+  fixedJoint->Load(link, this->parentLink, ignition::math::Pose3d());
   fixedJoint->Attach(this->parentLink, link);
   fixedJoint->Init();
   this->fixedJoints.push_back(fixedJoint);

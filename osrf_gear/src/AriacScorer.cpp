@@ -19,9 +19,9 @@
 #include <string>
 
 #include <gazebo/common/Console.hh>
-#include <gazebo/math/Pose.hh>
-#include <gazebo/math/Vector3.hh>
-#include <gazebo/math/Quaternion.hh>
+#include <ignition/math/Pose3.hh>
+#include <ignition/math/Vector3.hh>
+#include <ignition/math/Quaternion.hh>
 
 #include "osrf_gear/AriacScorer.h"
 
@@ -265,12 +265,12 @@ ariac::ShipmentScore AriacScorer::ScoreShippingBox(const ariac::ShippingBox & sh
       // Check the position of the product (ignoring orientation)
       gzdbg << "Comparing pose '" << currentProduct.pose << \
         "' with the assigned pose '" << assignedProduct.pose << "'" << std::endl;
-      gazebo::math::Vector3 posnDiff(
-        currentProduct.pose.pos.x - assignedProduct.pose.pos.x,
-        currentProduct.pose.pos.y - assignedProduct.pose.pos.y,
+      ignition::math::Vector3d posnDiff(
+        currentProduct.pose.Pos().X() - assignedProduct.pose.Pos().X(),
+        currentProduct.pose.Pos().Y() - assignedProduct.pose.Pos().Y(),
         0);
-      gzdbg << "Position error: " << posnDiff.GetLength() << std::endl;
-      if (posnDiff.GetLength() > scoringParameters.distanceThresh)
+      gzdbg << "Position error: " << posnDiff.Length() << std::endl;
+      if (posnDiff.Length() > scoringParameters.distanceThresh)
       {
         gzdbg << "Skipping product because it is not in the correct position" << std::endl;
         continue;
@@ -280,8 +280,8 @@ ariac::ShipmentScore AriacScorer::ScoreShippingBox(const ariac::ShippingBox & sh
       score.productPose += scoringParameters.productPosition;
 
       // Check the orientation of the product.
-      gazebo::math::Quaternion objOrientation = currentProduct.pose.rot;
-      gazebo::math::Quaternion orderOrientation = assignedProduct.pose.rot;
+      ignition::math::Quaterniond objOrientation = currentProduct.pose.Rot();
+      ignition::math::Quaterniond orderOrientation = assignedProduct.pose.Rot();
 
       // Filter products that aren't in the appropriate orientation (loosely).
       // If the quaternions represent the same orientation, q1 = +-q2 => q1.dot(q2) = +-1
@@ -298,7 +298,7 @@ ariac::ShipmentScore AriacScorer::ScoreShippingBox(const ariac::ShippingBox & sh
       }
 
       // Filter the yaw based on a threshold set in radians (more user-friendly).
-      double angleDiff = objOrientation.GetYaw() - orderOrientation.GetYaw();
+      double angleDiff = objOrientation.Yaw() - orderOrientation.Yaw();
       gzdbg << "Orientation error (yaw): " << std::abs(angleDiff) << \
         " (or " << std::abs(std::abs(angleDiff) - 2 * M_PI) << ")" << std::endl;
       if (std::abs(angleDiff) > scoringParameters.orientationThresh)
@@ -454,10 +454,10 @@ void AriacScorer::FillShipmentFromMsg(const osrf_gear::ShippingBoxContents::Cons
     obj.isFaulty = objMsg.is_faulty;
     geometry_msgs::Point p = objMsg.pose.position;
     geometry_msgs::Quaternion o = objMsg.pose.orientation;
-    gazebo::math::Vector3 objPosition(p.x, p.y, p.z);
-    gazebo::math::Quaternion objOrientation(o.w, o.x, o.y, o.z);
+    ignition::math::Vector3d objPosition(p.x, p.y, p.z);
+    ignition::math::Quaterniond objOrientation(o.w, o.x, o.y, o.z);
     objOrientation.Normalize();
-    obj.pose = gazebo::math::Pose(objPosition, objOrientation);
+    obj.pose = ignition::math::Pose3d(objPosition, objOrientation);
     shipment.products.push_back(obj);
   }
 }
@@ -472,9 +472,9 @@ void AriacScorer::FillShipmentFromMsg(const osrf_gear::Shipment &shipmentMsg, ar
     obj.type = ariac::DetermineModelType(objMsg.type);
     geometry_msgs::Point p = objMsg.pose.position;
     geometry_msgs::Quaternion o = objMsg.pose.orientation;
-    gazebo::math::Vector3 objPosition(p.x, p.y, p.z);
-    gazebo::math::Quaternion objOrientation(o.w, o.x, o.y, o.z);
-    obj.pose = gazebo::math::Pose(objPosition, objOrientation);
+    ignition::math::Vector3d objPosition(p.x, p.y, p.z);
+    ignition::math::Quaterniond objOrientation(o.w, o.x, o.y, o.z);
+    obj.pose = ignition::math::Pose3d(objPosition, objOrientation);
     shipment.products.push_back(obj);
   }
 }

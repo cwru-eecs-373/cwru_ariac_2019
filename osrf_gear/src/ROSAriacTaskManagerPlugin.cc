@@ -27,12 +27,12 @@
 #include <gazebo/common/Assert.hh>
 #include <gazebo/common/Console.hh>
 #include <gazebo/common/Events.hh>
-#include <gazebo/math/Pose.hh>
 #include <gazebo/msgs/gz_string.pb.h>
 #include <gazebo/physics/PhysicsTypes.hh>
 #include <gazebo/physics/World.hh>
 #include <gazebo/transport/transport.hh>
 #include <gazebo/util/LogRecord.hh>
+#include <ignition/math/Pose3.hh>
 #include <ros/ros.h>
 #include <sdf/sdf.hh>
 #include <std_msgs/Float32.h>
@@ -185,13 +185,13 @@ static void fillOrderMsg(const ariac::Order &_order,
     {
       osrf_gear::Product msgObj;
       msgObj.type = obj.type;
-      msgObj.pose.position.x = obj.pose.pos.x;
-      msgObj.pose.position.y = obj.pose.pos.y;
-      msgObj.pose.position.z = obj.pose.pos.z;
-      msgObj.pose.orientation.x = obj.pose.rot.x;
-      msgObj.pose.orientation.y = obj.pose.rot.y;
-      msgObj.pose.orientation.z = obj.pose.rot.z;
-      msgObj.pose.orientation.w = obj.pose.rot.w;
+      msgObj.pose.position.x = obj.pose.Pos().X();
+      msgObj.pose.position.y = obj.pose.Pos().Y();
+      msgObj.pose.position.z = obj.pose.Pos().Z();
+      msgObj.pose.orientation.x = obj.pose.Rot().X();
+      msgObj.pose.orientation.y = obj.pose.Rot().Y();
+      msgObj.pose.orientation.z = obj.pose.Rot().Z();
+      msgObj.pose.orientation.w = obj.pose.Rot().W();
 
       // Add the product to the shipment.
       msgShipment.products.push_back(msgObj);
@@ -383,7 +383,7 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
           continue;
         }
         sdf::ElementPtr poseElement = productElem->GetElement("pose");
-        math::Pose pose = poseElement->Get<math::Pose>();
+        ignition::math::Pose3d pose = poseElement->Get<ignition::math::Pose3d>();
 
         // Add the product to the shipment.
         bool isFaulty = false;  // We never want to request faulty products.
@@ -518,7 +518,7 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
 void ROSAriacTaskManagerPlugin::OnUpdate()
 {
   std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
-  auto currentSimTime = this->dataPtr->world->GetSimTime();
+  auto currentSimTime = this->dataPtr->world->SimTime();
 
   // Delay advertising the competition start service to avoid a crash.
   // Sometimes if the competition is started before the world is fully loaded, it causes a crash.
@@ -673,7 +673,7 @@ void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce()
   bool interruptOnUnwantedProducts = nextOrder.interruptOnUnwantedProducts > 0;
   bool interruptOnWantedProducts = nextOrder.interruptOnWantedProducts > 0;
   bool noActiveOrder = this->dataPtr->ordersInProgress.empty();
-  auto elapsed = this->dataPtr->world->GetSimTime() - this->dataPtr->gameStartTime;
+  auto elapsed = this->dataPtr->world->SimTime() - this->dataPtr->gameStartTime;
   bool announceNextOrder = false;
 
   // Check whether announce a new order from the list.
@@ -766,7 +766,7 @@ void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce()
 /////////////////////////////////////////////////
 void ROSAriacTaskManagerPlugin::ProcessSensorBlackout()
 {
-  auto currentSimTime = this->dataPtr->world->GetSimTime();
+  auto currentSimTime = this->dataPtr->world->SimTime();
   if (this->dataPtr->sensorBlackoutProductCount > 0)
   {
     // Count total products in all boxes.
