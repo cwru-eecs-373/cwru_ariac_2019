@@ -22,9 +22,9 @@
 #define _GAZEBO_OBJECT_DISPOSAL_PLUGIN_HH_
 
 #include <gazebo/common/Plugin.hh>
-#include <gazebo/math/Pose.hh>
 #include <gazebo/sensors/sensors.hh>
 #include <gazebo/util/system.hh>
+#include <ignition/math/Pose3.hh>
 
 #include "SideContactPlugin.hh"
 
@@ -63,7 +63,7 @@ namespace gazebo
     protected: bool activateOnce = false;
 
     /// \brief Pose where the object will be teleported.
-    protected: math::Pose disposalPose;
+    protected: ignition::math::Pose3d disposalPose;
 
     /// \brief How many models have been removed.
     protected: int numRemovedModels = 0;

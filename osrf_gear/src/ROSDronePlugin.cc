@@ -237,7 +237,7 @@ void ROSDronePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 /////////////////////////////////////////////////
 void ROSDronePlugin::OnUpdate(const common::UpdateInfo &/*_info*/)
 {
-  auto currentSimTime = this->dataPtr->world->GetSimTime();
+  auto currentSimTime = this->dataPtr->world->SimTime();
   if (this->dataPtr->currentState == "ready_to_collect")
   {
     if (this->dataPtr->deliveryTriggered)
