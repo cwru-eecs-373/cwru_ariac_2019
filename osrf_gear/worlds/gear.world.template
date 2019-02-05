@@ -85,27 +85,16 @@ def expand_snippet(filename, data=locals()):
       </spot>
     </light>
 
-    <!-- Pad to detect (and delete) boxes at the end of the belt -->
-    <include>
-      <name>drone_collection_zone</name>
-      <uri>model://drone_collection_zone_ariac</uri>
-      <pose>1.0 -4.6 0.03 0 1.5707 0</pose>
-    </include>
-
     <!-- the workcell -->
     <include>
-      <uri>model://shipping_container_short_ariac</uri>
-      <pose>0.275 -1.0 0 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://shipping_container_conveyor_tall_ariac</uri>
-      <pose>0.04 -1.0 0 0 0 0</pose>
+      <uri>model://workcell</uri>
+      <pose>0 0 0 0 0 1.57</pose>
     </include>
 
 @[for bin_name, bin_pose in bins.items()]@
     <include>
       <name>@(bin_name)</name>
-      <uri>model://yellow_bin_ariac</uri>
+      <uri>model://workcell_bin</uri>
       <pose>@(' '.join(bin_pose.xyz)) @(' '.join(bin_pose.rpy))</pose>
     </include>
 @[end for]@
@@ -153,32 +142,6 @@ expand_snippet('laser_profiler.sdf.template')
 @[end if]@
 @[end for]@
 
-@{shipping_boxes_on_belt = 0}@
-@[if options['insert_shipping_boxes']]@
-@[  if options['start_box_at_belt_center']]@
-    <!-- start with an extra box in the middle of the belt -->
-@{shipping_box_name = 'shipping_box_' + str(shipping_boxes_on_belt)}@
-    <model name="@(shipping_box_name)">
-      <pose>0.55 0.9 0.62 0 0 0</pose>
-@{
-expand_snippet('shipping_box.sdf.template')
-}@
-    </model>
-@{shipping_boxes_on_belt += 1}@
-@[  end if]@
-
-    <!-- start with a box on the belt -->
-@{shipping_box_name = 'shipping_box_' + str(shipping_boxes_on_belt)}@
-    <model name="@(shipping_box_name)">
-      <pose>0.55 4.0 0.87 0 0 0</pose>
-@{
-expand_snippet('shipping_box.sdf.template')
-}@
-    </model>
-@{shipping_boxes_on_belt += 1}@
-
-@[end if]@
-
 @{belt_models_loop = True}@
 @{belt_population_cycles = options['belt_population_cycles'] if belt_models_loop else 1}
 
@@ -208,25 +171,10 @@ expand_snippet('shipping_box.sdf.template')
 @{obj_type_index += 1}@
 @[end for]@
 
-    <!-- drone for delivering shipping boxes -->
-    <model name="drone">
-      <pose>-1.4 -9.4 4.3 0 0 1.5707</pose>
-      <include>
-        <name>drone</name>
-        <uri>model://drone_with_box_ariac</uri>
-      </include>
-      <plugin name="drone_plugin" filename="libROSDronePlugin.so">
-        <update_rate>10</update_rate>
-        <submit_shipment_service_name>/ariac/submit_shipment</submit_shipment_service_name>
-        <waiting_box_topic>/ariac/waiting_shipping_box</waiting_box_topic>
-        <collection_point>0.8 -4.4 0.97</collection_point>
-      </plugin>
-    </model>
-
     <!-- an invisible conveyor belt -->
       <include>
         <name>conveyor_belt</name>
-        <pose>-0.6 0 0.17 0 0 0</pose>
+        <pose>0.07 0.8 0.464 0 0 0</pose>
         <uri>model://conveyor_belt_tall_ariac</uri>
       </include>
 
@@ -358,7 +306,7 @@ if '_update' in order_name:
     <!-- A ground plane to hide the under_workcell_plane -->
     <model name="ground_plane">
       <static>true</static>
-      <pose>-50 50 0 0 0 0</pose>
+      <pose>-50 50 -0.01 0 0 0</pose>
       <link name="link">
         <visual name="visual">
           <cast_shadows>false</cast_shadows>
@@ -421,27 +369,15 @@ count[product.type] = id + 1
 
 @[end if]@
 
-    <!-- Plugin to stop the belt when congestion is detected. -->
-    <!-- There's a `congestion_sensor` at the end of the belt that's a break beam.
-      If this detects a model, and the `drone_collection_zone` detects a box waiting,
-      then this plugin will set the belt power to 0 and disable conveyor belt control.
-      Control will be reenabled when the waiting box gets collected (power left at 0). -->
-    <plugin filename="libConveyorCongestionPlugin.so" name="congestion_controller">
-      <congestion_sensor_topic>/ariac/congestion_sensor</congestion_sensor_topic>
-      <conveyor_control_topic>/ariac/conveyor_enable</conveyor_control_topic>
-      <waiting_box_topic>/ariac/waiting_shipping_box</waiting_box_topic>
-      <update_rate>10</update_rate>
-    </plugin>
-
     <!-- A visual and collision of the linear rail the robots ride on -->
     <model name="linear_rail">
-      <pose>0 1.0 0.7 0 0 0</pose>
+      <pose>0.3 0 0.9 0 0 0</pose>
       <static>true</static>
       <link name="rail_link">
         <visual name="rail_link_visual">
           <geometry>
             <box>
-              <size>0.2 4.0 0.1</size>
+              <size>0.2 4.6 0.1</size>
             </box>
           </geometry>
           <material>
