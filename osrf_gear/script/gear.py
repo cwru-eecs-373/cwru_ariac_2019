@@ -89,25 +89,18 @@ sensor_configs = {
     'quality_control': None,
 }
 default_sensors = {
-    'congestion_sensor': {
-        'type': 'break_beam',
-        'pose': {
-            'xyz': [0.06, -3.05, 0.62],
-            'rpy': [0.0, 0.0, 0.0]
-        }
-    },
     'quality_control_sensor_1': {
         'type': 'quality_control',
         'pose': {
-            'xyz': [0.55, 1.1, 1.37],
-            'rpy': [-1.5707, 1.5707, -3.1416]
+            'xyz': [0.3, 3.5, 1.5],
+            'rpy': [0, 1.574, -1.574]
         }
     },
     'quality_control_sensor_2': {
         'type': 'quality_control',
         'pose': {
-            'xyz': [0.55, -0.7, 1.37],
-            'rpy': [-1.5707, 1.5707, -3.1416]
+            'xyz': [0.3, -3.5, 1.5],
+            'rpy': [0, 1.574, 1.574]
         }
     },
 }
