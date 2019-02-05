@@ -105,29 +105,19 @@ default_sensors = {
     },
 }
 default_belt_models = {
-    'shipping_box': {
-        12.0: {
-            'pose': {
-                'xyz': [0.0, 0.0, 0.2],
-                'rpy': [0.0, 0.0, 1.5708]
-            }
-        }
-    },
 }
-n_bins = 5
-bin1_x = -0.775
-bin1_y = -1.3
-binN_x = -0.775
-binN_y = bin1_y + n_bins * 0.81
-bin_width = 0.35
-bin_depth = 0.25
-bin_height = 0.75
-bin_angle = -0.19
+bin_width = 0.6
+bin_depth = 0.6
+bin_height = 0.72
+bin_angle = 0.0
 default_bin_origins = {
-    'bin{0}'.format(n): [
-        bin1_x + (binN_x - bin1_x) / n_bins * n,
-        bin1_y + (binN_y - bin1_y) / n_bins * n,
-        bin_height] for n in range(1, n_bins + 1)}
+    'bin1': [-0.3, -1.916, 0],
+    'bin2': [-0.3, -1.15, 0],
+    'bin3': [-0.3, -0.383, 0],
+    'bin4': [-0.3, 0.383, 0],
+    'bin5': [-0.3, 1.15, 0],
+    'bin6': [-0.3, 1.916, 0],
+}
 
 configurable_options = {
     'insert_shipping_boxes': True,

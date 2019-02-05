@@ -149,24 +149,11 @@ expand_snippet('laser_profiler.sdf.template')
 @[for obj_type, spawn_times in belt_models.items()]@
     <!-- Pool of @(obj_type) objects -->
 @[  for index in range(belt_population_cycles * len(spawn_times))]@
-@[    if obj_type is 'shipping_box']@
-@[      if options['insert_shipping_boxes']]@
-@{shipping_box_name = 'shipping_box_' + str(index + shipping_boxes_on_belt)}@
-    <model name="@(shipping_box_name)">
-      <pose>@(7.5 + 1.25 * obj_type_index) @(-9.8 + 1.25 * index) -4.9 0 0 0</pose>
-@{
-expand_snippet('shipping_box.sdf.template')
-}@
-    </model>
-@[      end if]@
-@[    else]@
     <include>
       <uri>model://@(obj_type)_ariac</uri>
       <name>@(obj_type)_@(index)</name>
       <pose>@(7.5 + 0.25 * obj_type_index) @(-9.8 + 0.25 * index) -5.0 0 0 0</pose>
     </include>
-@[    end if]@
-
 @[  end for]@
 @{obj_type_index += 1}@
 @[end for]@
@@ -196,7 +183,7 @@ expand_snippet('shipping_box.sdf.template')
       <rate_modifier_topic>/ariac/population/rate_modifier</rate_modifier_topic>
       <control_topic>/ariac/population/control</control_topic>
       <state_topic>/ariac/population/state</state_topic>
-      <start_index>@(shipping_boxes_on_belt)</start_index>
+      <start_index>0</start_index>
       <prefix_object_names>false</prefix_object_names>
       <loop_forever>@("true" if belt_models_loop else "false")</loop_forever>
       <frame>conveyor_belt::conveyor_belt_fixed</frame>
