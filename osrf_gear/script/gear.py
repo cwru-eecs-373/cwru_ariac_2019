@@ -42,7 +42,7 @@ arm_configs = {
     'arm1': {
         'arm_type': 'ur10',
         'pose': {
-            'xyz': [0.0, 1.8, 0.7],
+            'xyz': [0.3, 0.92, 0.9],
             'rpy': [0.0, 0.0, 0.0]
         },
         'default_initial_joint_states': {
@@ -58,7 +58,7 @@ arm_configs = {
     'arm2': {
         'arm_type': 'ur10',
         'pose': {
-            'xyz': [0.0, 0.2, 0.7],
+            'xyz': [0.3, -0.92, 0.9],
             'rpy': [0.0, 0.0, 0.0]
         },
         'default_initial_joint_states': {
