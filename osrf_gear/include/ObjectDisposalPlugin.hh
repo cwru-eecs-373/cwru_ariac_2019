@@ -22,9 +22,9 @@
 #define _GAZEBO_OBJECT_DISPOSAL_PLUGIN_HH_
 
 #include <gazebo/common/Plugin.hh>
+#include <gazebo/math/Pose.hh>
 #include <gazebo/sensors/sensors.hh>
 #include <gazebo/util/system.hh>
-#include <ignition/math/Pose3.hh>
 
 #include "SideContactPlugin.hh"
 
@@ -50,32 +50,12 @@ namespace gazebo
     /// \brief Act on models that are ontop of the sensor's link
     protected: void ActOnContactingModels();
 
-    /// \brief Callback for state changes.
-    protected: void OnActivation(ConstGzStringPtr &_msg);
-
     /// \brief If true, only delete models if their CoG is within the bounding box of the link
     protected: bool centerOfGravityCheck;
 
-    /// \brief Whether or not models in contact will be deleted.
-    protected: bool active = false;
-
-    /// \brief True if should be deactivated after an active iteration.
-    protected: bool activateOnce = false;
-
     /// \brief Pose where the object will be teleported.
-    protected: ignition::math::Pose3d disposalPose;
-
-    /// \brief How many models have been removed.
-    protected: int numRemovedModels = 0;
-
-    /// \brief Node for communication.
-    protected: transport::NodePtr node;
-
-    /// \brief Subscription for activation topic.
-    protected: transport::SubscriberPtr activationSub;
-
-    /// \brief Publisher for current box.
-    protected: transport::PublisherPtr currentBoxPub;
+    protected: math::Pose disposalPose;
   };
 }
 #endif
+
