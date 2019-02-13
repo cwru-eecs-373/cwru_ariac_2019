@@ -142,6 +142,12 @@ expand_snippet('laser_profiler.sdf.template')
 @[end if]@
 @[end for]@
 
+    <!-- a wall to delete objects at the end of the belt -->
+    <include>
+      <uri>model://deletion_wall</uri>
+      <pose>1.2 -4.1 1.41 0 0 1.5708</pose>
+    </include>
+
 @{belt_models_loop = True}@
 @{belt_population_cycles = options['belt_population_cycles'] if belt_models_loop else 1}
 
