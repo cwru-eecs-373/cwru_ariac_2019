@@ -29,6 +29,7 @@ namespace ariac
 {
   using namespace gazebo;
 
+  typedef std::string KitType_t;
   typedef std::string ShipmentType_t;
   typedef std::string ShippingBoxID_t;
   typedef std::string OrderID_t;
@@ -320,6 +321,60 @@ namespace ariac
 
     /// \brief A shipment is composed of multiple products.
     public: std::vector<Product> products;
+  };
+
+  /// \brief Class to store information about each object contained in a kit.
+  class KitObject
+  {
+    /// \brief Stream insertion operator.
+    /// \param[in] _out output stream.
+    /// \param[in] _obj Kit object to output.
+    /// \return The output stream
+    public: friend std::ostream &operator<<(std::ostream &_out,
+                                            const KitObject &_obj)
+    {
+      _out << "<object>" << std::endl;
+      _out << "Type: [" << _obj.type << "]" << std::endl;
+      _out << "Faulty: [" << (_obj.isFaulty ? "true" : "false") << "]" << std::endl;
+      _out << "Pose: [" << _obj.pose << "]" << std::endl;
+      _out << "</object>" << std::endl;
+      return _out;
+    }
+
+    /// \brief Object type.
+    public: std::string type;
+
+    /// \brief Whether or not the object is faulty.
+    public: bool isFaulty;
+
+    /// \brief Pose in which the object should be placed.
+    public: ignition::math::Pose3d pose;
+
+  };
+
+  /// \brief Class to store information about a kit.
+  class Kit
+  {
+    /// \brief Stream insertion operator.
+    /// \param[in] _out output stream.
+    /// \param[in] _kit kit to output.
+    /// \return The output stream.
+    public: friend std::ostream &operator<<(std::ostream &_out,
+                                            const Kit &_kit)
+    {
+      _out << "<kit type='" << _kit.kitType << "'>";
+      for (const auto & obj : _kit.objects)
+        _out << std::endl << obj;
+      _out << std::endl << "</kit>" << std::endl;
+
+      return _out;
+    }
+
+    /// \brief The type of the kit.
+    public: KitType_t kitType;
+
+    /// \brief A kit is composed of multiple objects.
+    public: std::vector<KitObject> objects;
   };
 
   /// \brief Class to store information about an order.

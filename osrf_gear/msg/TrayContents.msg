@@ -5,4 +5,4 @@
 string tray
 
 # Collection of objects
-DetectedObject[] objects
+DetectedProduct[] objects
