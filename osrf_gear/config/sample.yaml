@@ -3,6 +3,8 @@ options:
   insert_models_over_bins: true
   fill_demo_shipment: false
   start_box_at_belt_center: true
+  belt_population_cycles: 3
+
 
 orders:
   order_0:
@@ -50,6 +52,18 @@ models_over_bins:
         rpy: [0, 0, 'pi/4']
         num_models_x: 3
         num_models_y: 3
+
+belt_models:
+  piston_rod_part:
+    1.0:
+      pose:
+        xyz: [0.0, 0.0, 0.1]
+        rpy: [0, 0, 'pi/2']
+  gear_part:
+    5.0:
+      pose:
+        xyz: [0.0, 0.0, 0.1]
+        rpy: [0, 0, 'pi/2']
 
 faulty_products:
   - piston_rod_part_0  # this product gets spawned in the tutorial
