@@ -282,9 +282,9 @@ void ROSAGVPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 }
 
 /////////////////////////////////////////////////
-void ROSAGVPlugin::OnUpdate(const common::UpdateInfo &/*_info*/)
+void ROSAGVPlugin::OnUpdate(const common::UpdateInfo & _info)
 {
-  auto currentSimTime = this->dataPtr->world->GetSimTime();
+  auto currentSimTime = _info.simTime;
   if (this->dataPtr->currentState == "ready_to_deliver")
   {
     if (this->dataPtr->deliveryTriggered)
