@@ -2,12 +2,6 @@
 <launch>
   <arg name="competition_mode" value="$(optenv ARIAC_COMPETITION false)" />
 
-  <!-- run a relay to make joint_states available on ariac/joint_states -->
-  <node name="relay_joint_states" pkg="topic_tools" type="relay"
-        args="/joint_states /ariac/joint_states" required="true" output="log" />
-
-  <remap from="joint_states" to="ariac/joint_states" />
-
   <arg name="limited" default="@('true' if joint_limited_ur10 else 'false')" />
   <arg name="gui" default="true"/>
   <arg name="debug" default="false"/>
