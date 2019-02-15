@@ -531,7 +531,7 @@ def prepare_template_data(config_dict, args):
         'faulty_products': {},
         'drops': {},
         'orders': {},
-        'options': {},
+        'options': {'insert_agvs': True},
         'time_limit': default_time_limit,
         'bin_height': bin_height,
         'world_dir': world_dir,

@@ -208,6 +208,122 @@ expand_snippet('laser_profiler.sdf.template')
     </plugin>
 @[end if]@
 
+@[if options['insert_agvs']]@
+@[for agv_id in [1,2]]@
+    <!-- AGV@(str(agv_id)) -->
+    <model name="agv@(str(agv_id))">
+      <pose>0.3 @(3.3 if agv_id == 1 else -3.3) 0 0 0 @(3.14159 if agv_id == 1 else 0)</pose>
+      <include>
+        <name>agv@(str(agv_id))</name>
+        <uri>model://warehouse_robot_ariac</uri>
+      </include>
+      <plugin name="agv_plugin" filename="libROSAGVPlugin.so">
+        <submit_tray_service_name>/ariac/submit_tray</submit_tray_service_name>
+        <clear_tray_service_name>/ariac/kit_tray_@(str(agv_id))/clear_tray</clear_tray_service_name>
+        <lock_tray_service_name>/ariac/kit_tray_@(str(agv_id))/lock_models</lock_tray_service_name>
+        <index>@(str(agv_id))</index>
+      </plugin>
+
+      <!-- a tray for building kits -->
+      <!-- (this has to be in a model tag so logical cameras can detect it as a nested model) -->
+      <model name="kit_tray_@(str(agv_id))">
+        <pose>0.0 0.15 0.75 0 0 0</pose>
+        <include>
+          <name>kit_tray_@(str(agv_id))</name>
+          <uri>model://kit_tray_ariac</uri>
+        </include>
+        <plugin name="kit_tray_plugin" filename="libROSAriacKitTrayPlugin.so">
+          <contact_sensor_name>kit_tray_contact</contact_sensor_name>
+          <clear_tray_service_name>/ariac/kit_tray_@(str(agv_id))/clear_tray</clear_tray_service_name>
+          <lock_models_service_name>/ariac/kit_tray_@(str(agv_id))/lock_models</lock_models_service_name>
+          <update_rate>20</update_rate>
+          <faulty_parts>
+@[for part_name, part_info in faulty_products.items()]@
+            <name>@(part_name)</name>
+@[end for]@
+          </faulty_parts>
+        </plugin>
+      </model>
+
+      <!-- join the tray and agv -->
+      <joint name="agv_tray" type="fixed">
+          <parent>agv@(str(agv_id))::link</parent>
+          <child>kit_tray_@(str(agv_id))::kit_tray_@(str(agv_id))::tray</child>
+      </joint>
+    </model>
+
+    <model name="quality_control_sensor_@(str(agv_id))">
+      <pose>0.3 @(3.5 if agv_id == 1 else -3.5) 1.5 0 1.574 @(-1.574 if agv_id == 1 else 1.574)</pose>
+      <plugin name="ros_logical_camera" filename="libROSLogicalCameraPlugin.so">
+        <robotNamespace>ariac</robotNamespace>
+        <position_noise>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.001</stddev>
+          </noise>
+        </position_noise>
+        <orientation_noise>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </orientation_noise>
+        <known_model_names>
+@[for part_name, part_info in faulty_products.items()]@
+          <name>@(part_name)</name>
+@[end for]@
+        </known_model_names>
+      </plugin>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.000166667</ixx>
+            <iyy>0.000166667</iyy>
+            <izz>0.000166667</izz>
+          </inertia>
+        </inertial>
+
+        <collision name="collision">
+          <pose>0 0.02 0 0 0 -1.5708</pose>
+          <geometry>
+            <mesh>
+              <uri>model://logical_camera/meshes/camera.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+
+        <visual name="visual">
+          <pose>0 0.02 0 0 0 -1.5708</pose>
+          <geometry>
+            <mesh>
+              <uri>model://logical_camera/meshes/camera.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+
+        <sensor name="logical_camera" type="logical_camera">
+          <logical_camera>
+            <near>0.73</near>
+            <far>0.78</far>
+            <horizontal_fov>0.7</horizontal_fov>
+            <aspect_ratio>0.35</aspect_ratio>
+          </logical_camera>
+
+          <visualize>false</visualize>
+          <always_on>true</always_on>
+          <update_rate>10</update_rate>
+        </sensor>
+      </link>
+    </model>
+
+@[end for]@
+@[end if]@
+
+
     <!-- The NIST-ARIAC task manager -->
     <plugin filename="libROSAriacTaskManagerPlugin.so" name="task_manager">
       <robot_namespace>ariac</robot_namespace>
@@ -217,7 +333,7 @@ expand_snippet('laser_profiler.sdf.template')
       <population_activate_topic>/ariac/populate_belt</population_activate_topic>
       <conveyor_enable_topic>/ariac/conveyor_enable</conveyor_enable_topic>
       <conveyor_control_topic>/ariac/conveyor/control</conveyor_control_topic>
-      <submit_shipment_service_name>/ariac/submit_shipment</submit_shipment_service_name>
+      <submit_tray_service_name>/ariac/submit_tray</submit_tray_service_name>
       <material_locations_service_name>/ariac/material_locations</material_locations_service_name>
       <orders_topic>/ariac/orders</orders_topic>
 @[for order_name, order in orders.items()]@

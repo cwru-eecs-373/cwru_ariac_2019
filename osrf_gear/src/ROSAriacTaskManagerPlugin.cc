@@ -106,8 +106,8 @@ namespace gazebo
     /// \brief Service that allows users to query the location of materials.
     public: ros::ServiceServer getMaterialLocationsServiceServer;
 
-    /// \brief Service that allows a shipment to be submitted for inspection.
-    public: ros::ServiceServer submitShipmentServiceServer;
+    /// \brief Service that allows a tray to be submitted for inspection.
+    public: ros::ServiceServer submitTrayServiceServer;
 
     /// \brief Transportation node.
     public: transport::NodePtr node;
@@ -277,9 +277,9 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
   if (_sdf->HasElement("orders_topic"))
     ordersTopic = _sdf->Get<std::string>("orders_topic");
 
-  std::string submitShipmentServiceName = "submit_shipment";
-  if (_sdf->HasElement("submit_shipment_service_name"))
-    submitShipmentServiceName = _sdf->Get<std::string>("submit_shipment_service_name");
+  std::string submitTrayServiceName = "submit_tray";
+  if (_sdf->HasElement("submit_tray_service_name"))
+    submitTrayServiceName = _sdf->Get<std::string>("submit_tray_service_name");
 
   std::string getMaterialLocationsServiceName = "material_locations";
   if (_sdf->HasElement("material_locations_service_name"))
@@ -475,10 +475,10 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
     this->dataPtr->rosnode->advertiseService(compEndServiceName,
       &ROSAriacTaskManagerPlugin::HandleEndService, this);
 
-  // Service for submitting shipping boxes for inspection.
-  this->dataPtr->submitShipmentServiceServer =
-    this->dataPtr->rosnode->advertiseService(submitShipmentServiceName,
-      &ROSAriacTaskManagerPlugin::HandleSubmitShipmentService, this);
+  // Service for submitting AGV trays for inspection.
+  this->dataPtr->submitTrayServiceServer =
+    this->dataPtr->rosnode->advertiseService(submitTrayServiceName,
+      &ROSAriacTaskManagerPlugin::HandleSubmitTrayService, this);
 
   // Service for querying material storage locations.
   if (!this->dataPtr->competitionMode)
@@ -836,15 +836,15 @@ bool ROSAriacTaskManagerPlugin::HandleEndService(
 }
 
 /////////////////////////////////////////////////
-bool ROSAriacTaskManagerPlugin::HandleSubmitShipmentService(
-  ros::ServiceEvent<osrf_gear::SubmitShipment::Request, osrf_gear::SubmitShipment::Response> & event)
+bool ROSAriacTaskManagerPlugin::HandleSubmitTrayService(
+  ros::ServiceEvent<osrf_gear::SubmitTray::Request, osrf_gear::SubmitTray::Response> & event)
 {
   std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
-  const osrf_gear::SubmitShipment::Request& req = event.getRequest();
-  osrf_gear::SubmitShipment::Response& res = event.getResponse();
+  const osrf_gear::SubmitTray::Request& req = event.getRequest();
+  osrf_gear::SubmitTray::Response& res = event.getResponse();
 
   const std::string& callerName = event.getCallerName();
-  gzdbg << "Submit shipment service called by: " << callerName << std::endl;
+  gzdbg << "Submit tray service called by: " << callerName << std::endl;
 
   if (this->dataPtr->competitionMode && callerName.compare("/gazebo") != 0)
   {
@@ -862,16 +862,17 @@ bool ROSAriacTaskManagerPlugin::HandleSubmitShipmentService(
     return false;
   }
 
-  ariac::ShippingBox shippingBox;
-  gzdbg << "SubmitShipment request received for shipping box: " << req.shipping_box_id << std::endl;
-  if (!this->dataPtr->ariacScorer.GetShippingBoxById(req.shipping_box_id, shippingBox))
-  {
-    res.success = false;
-    return true;
-  }
-  shippingBox.currentShipment.shipmentType = req.shipment_type;
+  // ariac::ShippingBox shippingBox;
+  // gzdbg << "SubmitShipment request received for shipping box: " << req.shipping_box_id << std::endl;
+  // if (!this->dataPtr->ariacScorer.GetShippingBoxById(req.shipping_box_id, shippingBox))
+  // {
+  //   res.success = false;
+  //   return true;
+  // }
+  // shippingBox.currentShipment.shipmentType = req.shipment_type;
   res.success = true;
-  res.inspection_result = this->dataPtr->ariacScorer.SubmitShipment(shippingBox).total();
+  // res.inspection_result = this->dataPtr->ariacScorer.SubmitShipment(shippingBox).total();
+  res.inspection_result = 0; 
   gzdbg << "Inspection result: " << res.inspection_result << std::endl;
   return true;
 }
