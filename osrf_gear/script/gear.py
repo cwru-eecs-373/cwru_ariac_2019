@@ -42,7 +42,7 @@ arm_configs = {
     'arm1': {
         'arm_type': 'ur10',
         'pose': {
-            'xyz': [0.0, 1.8, 0.7],
+            'xyz': [0.3, 0.92, 0.9],
             'rpy': [0.0, 0.0, 0.0]
         },
         'default_initial_joint_states': {
@@ -58,7 +58,7 @@ arm_configs = {
     'arm2': {
         'arm_type': 'ur10',
         'pose': {
-            'xyz': [0.0, 0.2, 0.7],
+            'xyz': [0.3, -0.92, 0.9],
             'rpy': [0.0, 0.0, 0.0]
         },
         'default_initial_joint_states': {
@@ -89,52 +89,35 @@ sensor_configs = {
     'quality_control': None,
 }
 default_sensors = {
-    'congestion_sensor': {
-        'type': 'break_beam',
-        'pose': {
-            'xyz': [0.06, -3.05, 0.62],
-            'rpy': [0.0, 0.0, 0.0]
-        }
-    },
     'quality_control_sensor_1': {
         'type': 'quality_control',
         'pose': {
-            'xyz': [0.55, 1.1, 1.37],
-            'rpy': [-1.5707, 1.5707, -3.1416]
+            'xyz': [0.3, 3.5, 1.5],
+            'rpy': [0, 1.574, -1.574]
         }
     },
     'quality_control_sensor_2': {
         'type': 'quality_control',
         'pose': {
-            'xyz': [0.55, -0.7, 1.37],
-            'rpy': [-1.5707, 1.5707, -3.1416]
+            'xyz': [0.3, -3.5, 1.5],
+            'rpy': [0, 1.574, 1.574]
         }
     },
 }
 default_belt_models = {
-    'shipping_box': {
-        12.0: {
-            'pose': {
-                'xyz': [0.0, 0.0, 0.2],
-                'rpy': [0.0, 0.0, 1.5708]
-            }
-        }
-    },
 }
-n_bins = 5
-bin1_x = -0.775
-bin1_y = -1.3
-binN_x = -0.775
-binN_y = bin1_y + n_bins * 0.81
-bin_width = 0.35
-bin_depth = 0.25
-bin_height = 0.75
-bin_angle = -0.19
+bin_width = 0.6
+bin_depth = 0.6
+bin_height = 0.72
+bin_angle = 0.0
 default_bin_origins = {
-    'bin{0}'.format(n): [
-        bin1_x + (binN_x - bin1_x) / n_bins * n,
-        bin1_y + (binN_y - bin1_y) / n_bins * n,
-        bin_height] for n in range(1, n_bins + 1)}
+    'bin1': [-0.3, -1.916, 0],
+    'bin2': [-0.3, -1.15, 0],
+    'bin3': [-0.3, -0.383, 0],
+    'bin4': [-0.3, 0.383, 0],
+    'bin5': [-0.3, 1.15, 0],
+    'bin6': [-0.3, 1.916, 0],
+}
 
 configurable_options = {
     'insert_shipping_boxes': True,
@@ -548,7 +531,7 @@ def prepare_template_data(config_dict, args):
         'faulty_products': {},
         'drops': {},
         'orders': {},
-        'options': {},
+        'options': {'insert_agvs': True},
         'time_limit': default_time_limit,
         'bin_height': bin_height,
         'world_dir': world_dir,

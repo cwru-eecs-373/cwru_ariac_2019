@@ -39,16 +39,19 @@ add_message_files(DIRECTORY msg
   Proximity.msg
   StorageUnit.msg
   ShippingBoxContents.msg
+  TrayContents.msg
   VacuumGripperState.msg
 )
 
 add_service_files(DIRECTORY srv
   FILES
+  AGVControl.srv
   DroneControl.srv
   ConveyorBeltControl.srv
   GetMaterialLocations.srv
   PopulationControl.srv
   SubmitShipment.srv
+  SubmitTray.srv
   VacuumGripperControl.srv
 )
 
@@ -160,6 +163,18 @@ install(TARGETS ${side_contact_plugin_name}
   RUNTIME DESTINATION bin
 )
 
+# Create the libROSAGVPlugin.so library.
+set(ros_agv_plugin_name ROSAGVPlugin)
+add_library(${ros_agv_plugin_name} src/ROSAGVPlugin.cc)
+target_link_libraries(${ros_agv_plugin_name} ${GAZEBO_LIBRARIES})
+add_dependencies(${ros_agv_plugin_name}
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+)
+install(TARGETS ${ros_agv_plugin_name}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 
 # Create the libConveyorBeltPlugin.so library.
 set(conveyor_belt_plugin_name ConveyorBeltPlugin)
@@ -369,6 +384,22 @@ add_dependencies(${target_name}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
 )
 install(TARGETS ${target_name}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+# Create the libROSAriacKitTrayPlugin.so library.
+set(kit_tray_plugin_name ROSAriacKitTrayPlugin)
+add_library(${kit_tray_plugin_name} src/ROSAriacKitTrayPlugin.cc)
+target_link_libraries(${kit_tray_plugin_name}
+  ${GAZEBO_LIBRARIES}
+  ${roscpp_LIBRARIES}
+)
+add_dependencies(${kit_tray_plugin_name}
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+)
+install(TARGETS ${kit_tray_plugin_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

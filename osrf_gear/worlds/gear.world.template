@@ -10,9 +10,11 @@ def expand_snippet(filename, data=locals()):
 <sdf version="1.5">
   <world name="default">
     <!-- Set the initial camera pose to be looking at the workspace. -->
-    <gui>
-      <camera name="user_camera">
-        <pose>7.64 -6 4 0 0.34 2.5</pose>
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose frame=''>-7.56272 4.06148 6.60308 0 0.636 -0.467992</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
       </camera>
     </gui>
 
@@ -85,27 +87,16 @@ def expand_snippet(filename, data=locals()):
       </spot>
     </light>
 
-    <!-- Pad to detect (and delete) boxes at the end of the belt -->
-    <include>
-      <name>drone_collection_zone</name>
-      <uri>model://drone_collection_zone_ariac</uri>
-      <pose>1.0 -4.6 0.03 0 1.5707 0</pose>
-    </include>
-
     <!-- the workcell -->
     <include>
-      <uri>model://shipping_container_short_ariac</uri>
-      <pose>0.275 -1.0 0 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://shipping_container_conveyor_tall_ariac</uri>
-      <pose>0.04 -1.0 0 0 0 0</pose>
+      <uri>model://workcell</uri>
+      <pose>0 0 0 0 0 1.57</pose>
     </include>
 
 @[for bin_name, bin_pose in bins.items()]@
     <include>
       <name>@(bin_name)</name>
-      <uri>model://yellow_bin_ariac</uri>
+      <uri>model://workcell_bin</uri>
       <pose>@(' '.join(bin_pose.xyz)) @(' '.join(bin_pose.rpy))</pose>
     </include>
 @[end for]@
@@ -153,31 +144,11 @@ expand_snippet('laser_profiler.sdf.template')
 @[end if]@
 @[end for]@
 
-@{shipping_boxes_on_belt = 0}@
-@[if options['insert_shipping_boxes']]@
-@[  if options['start_box_at_belt_center']]@
-    <!-- start with an extra box in the middle of the belt -->
-@{shipping_box_name = 'shipping_box_' + str(shipping_boxes_on_belt)}@
-    <model name="@(shipping_box_name)">
-      <pose>0.55 0.9 0.62 0 0 0</pose>
-@{
-expand_snippet('shipping_box.sdf.template')
-}@
-    </model>
-@{shipping_boxes_on_belt += 1}@
-@[  end if]@
-
-    <!-- start with a box on the belt -->
-@{shipping_box_name = 'shipping_box_' + str(shipping_boxes_on_belt)}@
-    <model name="@(shipping_box_name)">
-      <pose>0.55 4.0 0.87 0 0 0</pose>
-@{
-expand_snippet('shipping_box.sdf.template')
-}@
-    </model>
-@{shipping_boxes_on_belt += 1}@
-
-@[end if]@
+    <!-- a wall to delete objects at the end of the belt -->
+    <include>
+      <uri>model://deletion_wall</uri>
+      <pose>1.2 -4.1 1.41 0 0 1.5708</pose>
+    </include>
 
 @{belt_models_loop = True}@
 @{belt_population_cycles = options['belt_population_cycles'] if belt_models_loop else 1}
@@ -186,47 +157,19 @@ expand_snippet('shipping_box.sdf.template')
 @[for obj_type, spawn_times in belt_models.items()]@
     <!-- Pool of @(obj_type) objects -->
 @[  for index in range(belt_population_cycles * len(spawn_times))]@
-@[    if obj_type is 'shipping_box']@
-@[      if options['insert_shipping_boxes']]@
-@{shipping_box_name = 'shipping_box_' + str(index + shipping_boxes_on_belt)}@
-    <model name="@(shipping_box_name)">
-      <pose>@(7.5 + 1.25 * obj_type_index) @(-9.8 + 1.25 * index) -4.9 0 0 0</pose>
-@{
-expand_snippet('shipping_box.sdf.template')
-}@
-    </model>
-@[      end if]@
-@[    else]@
     <include>
       <uri>model://@(obj_type)_ariac</uri>
       <name>@(obj_type)_@(index)</name>
       <pose>@(7.5 + 0.25 * obj_type_index) @(-9.8 + 0.25 * index) -5.0 0 0 0</pose>
     </include>
-@[    end if]@
-
 @[  end for]@
 @{obj_type_index += 1}@
 @[end for]@
 
-    <!-- drone for delivering shipping boxes -->
-    <model name="drone">
-      <pose>-1.4 -9.4 4.3 0 0 1.5707</pose>
-      <include>
-        <name>drone</name>
-        <uri>model://drone_with_box_ariac</uri>
-      </include>
-      <plugin name="drone_plugin" filename="libROSDronePlugin.so">
-        <update_rate>10</update_rate>
-        <submit_shipment_service_name>/ariac/submit_shipment</submit_shipment_service_name>
-        <waiting_box_topic>/ariac/waiting_shipping_box</waiting_box_topic>
-        <collection_point>0.8 -4.4 0.97</collection_point>
-      </plugin>
-    </model>
-
     <!-- an invisible conveyor belt -->
       <include>
         <name>conveyor_belt</name>
-        <pose>-0.6 0 0.17 0 0 0</pose>
+        <pose>0.07 0.8 0.464 0 0 0</pose>
         <uri>model://conveyor_belt_tall_ariac</uri>
       </include>
 
@@ -248,7 +191,7 @@ expand_snippet('shipping_box.sdf.template')
       <rate_modifier_topic>/ariac/population/rate_modifier</rate_modifier_topic>
       <control_topic>/ariac/population/control</control_topic>
       <state_topic>/ariac/population/state</state_topic>
-      <start_index>@(shipping_boxes_on_belt)</start_index>
+      <start_index>0</start_index>
       <prefix_object_names>false</prefix_object_names>
       <loop_forever>@("true" if belt_models_loop else "false")</loop_forever>
       <frame>conveyor_belt::conveyor_belt_fixed</frame>
@@ -267,6 +210,122 @@ expand_snippet('shipping_box.sdf.template')
     </plugin>
 @[end if]@
 
+@[if options['insert_agvs']]@
+@[for agv_id in [1,2]]@
+    <!-- AGV@(str(agv_id)) -->
+    <model name="agv@(str(agv_id))">
+      <pose>0.3 @(3.3 if agv_id == 1 else -3.3) 0 0 0 @(3.14159 if agv_id == 1 else 0)</pose>
+      <include>
+        <name>agv@(str(agv_id))</name>
+        <uri>model://warehouse_robot_ariac</uri>
+      </include>
+      <plugin name="agv_plugin" filename="libROSAGVPlugin.so">
+        <submit_tray_service_name>/ariac/submit_tray</submit_tray_service_name>
+        <clear_tray_service_name>/ariac/kit_tray_@(str(agv_id))/clear_tray</clear_tray_service_name>
+        <lock_tray_service_name>/ariac/kit_tray_@(str(agv_id))/lock_models</lock_tray_service_name>
+        <index>@(str(agv_id))</index>
+      </plugin>
+
+      <!-- a tray for building kits -->
+      <!-- (this has to be in a model tag so logical cameras can detect it as a nested model) -->
+      <model name="kit_tray_@(str(agv_id))">
+        <pose>0.0 0.15 0.75 0 0 0</pose>
+        <include>
+          <name>kit_tray_@(str(agv_id))</name>
+          <uri>model://kit_tray_ariac</uri>
+        </include>
+        <plugin name="kit_tray_plugin" filename="libROSAriacKitTrayPlugin.so">
+          <contact_sensor_name>kit_tray_contact</contact_sensor_name>
+          <clear_tray_service_name>/ariac/kit_tray_@(str(agv_id))/clear_tray</clear_tray_service_name>
+          <lock_models_service_name>/ariac/kit_tray_@(str(agv_id))/lock_models</lock_models_service_name>
+          <update_rate>20</update_rate>
+          <faulty_parts>
+@[for part_name, part_info in faulty_products.items()]@
+            <name>@(part_name)</name>
+@[end for]@
+          </faulty_parts>
+        </plugin>
+      </model>
+
+      <!-- join the tray and agv -->
+      <joint name="agv_tray" type="fixed">
+          <parent>agv@(str(agv_id))::link</parent>
+          <child>kit_tray_@(str(agv_id))::kit_tray_@(str(agv_id))::tray</child>
+      </joint>
+    </model>
+
+    <model name="quality_control_sensor_@(str(agv_id))">
+      <pose>0.3 @(3.5 if agv_id == 1 else -3.5) 1.5 0 1.574 @(-1.574 if agv_id == 1 else 1.574)</pose>
+      <plugin name="ros_logical_camera" filename="libROSLogicalCameraPlugin.so">
+        <robotNamespace>ariac</robotNamespace>
+        <position_noise>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.001</stddev>
+          </noise>
+        </position_noise>
+        <orientation_noise>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </orientation_noise>
+        <known_model_names>
+@[for part_name, part_info in faulty_products.items()]@
+          <name>@(part_name)</name>
+@[end for]@
+        </known_model_names>
+      </plugin>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.000166667</ixx>
+            <iyy>0.000166667</iyy>
+            <izz>0.000166667</izz>
+          </inertia>
+        </inertial>
+
+        <collision name="collision">
+          <pose>0 0.02 0 0 0 -1.5708</pose>
+          <geometry>
+            <mesh>
+              <uri>model://logical_camera/meshes/camera.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+
+        <visual name="visual">
+          <pose>0 0.02 0 0 0 -1.5708</pose>
+          <geometry>
+            <mesh>
+              <uri>model://logical_camera/meshes/camera.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+
+        <sensor name="logical_camera" type="logical_camera">
+          <logical_camera>
+            <near>0.73</near>
+            <far>0.78</far>
+            <horizontal_fov>0.7</horizontal_fov>
+            <aspect_ratio>0.35</aspect_ratio>
+          </logical_camera>
+
+          <visualize>false</visualize>
+          <always_on>true</always_on>
+          <update_rate>10</update_rate>
+        </sensor>
+      </link>
+    </model>
+
+@[end for]@
+@[end if]@
+
+
     <!-- The NIST-ARIAC task manager -->
     <plugin filename="libROSAriacTaskManagerPlugin.so" name="task_manager">
       <robot_namespace>ariac</robot_namespace>
@@ -276,7 +335,7 @@ expand_snippet('shipping_box.sdf.template')
       <population_activate_topic>/ariac/populate_belt</population_activate_topic>
       <conveyor_enable_topic>/ariac/conveyor_enable</conveyor_enable_topic>
       <conveyor_control_topic>/ariac/conveyor/control</conveyor_control_topic>
-      <submit_shipment_service_name>/ariac/submit_shipment</submit_shipment_service_name>
+      <submit_tray_service_name>/ariac/submit_tray</submit_tray_service_name>
       <material_locations_service_name>/ariac/material_locations</material_locations_service_name>
       <orders_topic>/ariac/orders</orders_topic>
 @[for order_name, order in orders.items()]@
@@ -358,7 +417,7 @@ if '_update' in order_name:
     <!-- A ground plane to hide the under_workcell_plane -->
     <model name="ground_plane">
       <static>true</static>
-      <pose>-50 50 0 0 0 0</pose>
+      <pose>-50 50 -0.01 0 0 0</pose>
       <link name="link">
         <visual name="visual">
           <cast_shadows>false</cast_shadows>
@@ -421,27 +480,15 @@ count[product.type] = id + 1
 
 @[end if]@
 
-    <!-- Plugin to stop the belt when congestion is detected. -->
-    <!-- There's a `congestion_sensor` at the end of the belt that's a break beam.
-      If this detects a model, and the `drone_collection_zone` detects a box waiting,
-      then this plugin will set the belt power to 0 and disable conveyor belt control.
-      Control will be reenabled when the waiting box gets collected (power left at 0). -->
-    <plugin filename="libConveyorCongestionPlugin.so" name="congestion_controller">
-      <congestion_sensor_topic>/ariac/congestion_sensor</congestion_sensor_topic>
-      <conveyor_control_topic>/ariac/conveyor_enable</conveyor_control_topic>
-      <waiting_box_topic>/ariac/waiting_shipping_box</waiting_box_topic>
-      <update_rate>10</update_rate>
-    </plugin>
-
     <!-- A visual and collision of the linear rail the robots ride on -->
     <model name="linear_rail">
-      <pose>0 1.0 0.7 0 0 0</pose>
+      <pose>0.3 0 0.9 0 0 0</pose>
       <static>true</static>
       <link name="rail_link">
         <visual name="rail_link_visual">
           <geometry>
             <box>
-              <size>0.2 4.0 0.1</size>
+              <size>0.2 4.6 0.1</size>
             </box>
           </geometry>
           <material>
