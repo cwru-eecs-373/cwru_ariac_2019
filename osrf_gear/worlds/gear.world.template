@@ -10,9 +10,11 @@ def expand_snippet(filename, data=locals()):
 <sdf version="1.5">
   <world name="default">
     <!-- Set the initial camera pose to be looking at the workspace. -->
-    <gui>
-      <camera name="user_camera">
-        <pose>7.64 -6 4 0 0.34 2.5</pose>
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose frame=''>-7.56272 4.06148 6.60308 0 0.636 -0.467992</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
       </camera>
     </gui>
 
