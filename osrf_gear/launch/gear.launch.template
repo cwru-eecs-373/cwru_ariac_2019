@@ -2,12 +2,6 @@
 <launch>
   <arg name="competition_mode" value="$(optenv ARIAC_COMPETITION false)" />
 
-  <!-- run a relay to make joint_states available on ariac/joint_states -->
-  <node name="relay_joint_states" pkg="topic_tools" type="relay"
-        args="/joint_states /ariac/joint_states" required="true" output="log" />
-
-  <remap from="joint_states" to="ariac/joint_states" />
-
   <arg name="limited" default="@('true' if joint_limited_ur10 else 'false')" />
   <arg name="gui" default="true"/>
   <arg name="debug" default="false"/>
@@ -74,6 +68,32 @@ initial_joint_states_string = \
         hardware_interface:=EffortJointInterface
         use_effort_interface:=true joint_limited:=$(arg limited)
       " />
+    <!-- Remap and rewrite tf topics because robot description has same link names -->
+    <node name="tf_relay" pkg="osrf_gear" type="tf2_relay">
+      <remap from="~/in/tf" to="tf"/>
+      <remap from="~/in/tf_static" to="tf_static"/>
+      <remap from="~/out/tf" to="/tf"/>
+      <remap from="~/out/tf_static" to="/tf_static"/>
+      <rosparam>
+        prefix: @(arm.name)_
+        frames:
+          - linear_arm_actuator
+          - base_link
+          - base
+          - shoulder_link
+          - upper_arm_link
+          - forearm_link
+          - wrist_1_link
+          - wrist_2_link
+          - wrist_3_link
+          - ee_link
+          - vacuum_gripper_link
+          - tool0
+      </rosparam>
+    </node>
+    <remap from="/tf" to="tf"/>
+    <remap from="/tf_static" to="tf_static"/>
+
     <!-- load ur10 in gazebo, start robot state publisher, etc -->
     <include file="$(find osrf_gear)/launch/ur10/ur10.xml">
       <arg name="limited" value="$(arg limited)" />

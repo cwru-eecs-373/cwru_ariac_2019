@@ -422,6 +422,18 @@ install(TARGETS ${target_name}
   RUNTIME DESTINATION bin
 )
 
+add_executable(tf2_relay src/tf2_relay.cpp)
+target_link_libraries(tf2_relay
+  ${catkin_LIBRARIES}
+)
+target_include_directories(tf2_relay
+  PRIVATE
+  ${catkin_INCLUDE_DIRS}
+)
+install(PROGRAMS tf2_relay
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 
 #############
 ## Install ##
