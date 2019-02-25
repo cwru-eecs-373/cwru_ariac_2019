@@ -430,8 +430,8 @@ target_include_directories(tf2_relay
   PRIVATE
   ${catkin_INCLUDE_DIRS}
 )
-install(PROGRAMS tf2_relay
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(TARGETS tf2_relay
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 
