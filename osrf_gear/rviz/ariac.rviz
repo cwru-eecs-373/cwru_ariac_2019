@@ -4,12 +4,10 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /TF1
-        - /PointCloud1/Autocompute Value Bounds1
-        - /LaserScan1
-        - /LaserScan1/Autocompute Value Bounds1
+        - /Global Options1
+        - /Status1
       Splitter Ratio: 0.5
-    Tree Height: 588
+    Tree Height: 599
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -18,7 +16,7 @@ Panels:
       - /2D Nav Goal1
       - /Publish Point1
     Name: Tool Properties
-    Splitter Ratio: 0.588679016
+    Splitter Ratio: 0.5886790156364441
   - Class: rviz/Views
     Expanded:
       - /Current View1
@@ -28,7 +26,9 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud
+    SyncSource: ""
+Preferences:
+  PromptSaveOnExit: true
 Visualization Manager:
   Class: ""
   Displays:
@@ -38,7 +38,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Line Style:
-        Line Width: 0.0299999993
+        Line Width: 0.029999999329447746
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -55,9 +55,53 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        base:
+        arm1_base:
           Value: true
-        base_link:
+        arm1_base_link:
+          Value: true
+        arm1_ee_link:
+          Value: true
+        arm1_forearm_link:
+          Value: true
+        arm1_linear_arm_actuator:
+          Value: true
+        arm1_shoulder_link:
+          Value: true
+        arm1_tool0:
+          Value: true
+        arm1_upper_arm_link:
+          Value: true
+        arm1_vacuum_gripper_link:
+          Value: true
+        arm1_wrist_1_link:
+          Value: true
+        arm1_wrist_2_link:
+          Value: true
+        arm1_wrist_3_link:
+          Value: true
+        arm2_base:
+          Value: true
+        arm2_base_link:
+          Value: true
+        arm2_ee_link:
+          Value: true
+        arm2_forearm_link:
+          Value: true
+        arm2_linear_arm_actuator:
+          Value: true
+        arm2_shoulder_link:
+          Value: true
+        arm2_tool0:
+          Value: true
+        arm2_upper_arm_link:
+          Value: true
+        arm2_vacuum_gripper_link:
+          Value: true
+        arm2_wrist_1_link:
+          Value: true
+        arm2_wrist_2_link:
+          Value: true
+        arm2_wrist_3_link:
           Value: true
         belt_frame:
           Value: true
@@ -71,85 +115,35 @@ Visualization Manager:
           Value: true
         bin5_frame:
           Value: true
+        bin6_frame:
+          Value: true
         break_beam_1_frame:
-          Value: true
-        congestion_sensor_frame:
-          Value: true
-        depth_camera_1_frame:
-          Value: true
-        ee_link:
-          Value: true
-        forearm_link:
           Value: true
         laser_profiler_1_frame:
           Value: true
-        linear_arm_actuator:
-          Value: true
         logical_camera_1_frame:
           Value: true
-        logical_camera_1_gear_part_10_frame:
+        logical_camera_1_gasket_part_1_frame:
           Value: true
-        logical_camera_1_gear_part_11_frame:
+        logical_camera_1_gasket_part_2_frame:
           Value: true
-        logical_camera_1_gear_part_12_frame:
+        logical_camera_1_gasket_part_3_frame:
           Value: true
-        logical_camera_1_gear_part_13_frame:
+        logical_camera_1_gasket_part_4_frame:
           Value: true
-        logical_camera_1_gear_part_14_frame:
-          Value: true
-        logical_camera_1_gear_part_15_frame:
-          Value: true
-        logical_camera_1_gear_part_1_frame:
-          Value: true
-        logical_camera_1_gear_part_2_frame:
-          Value: true
-        logical_camera_1_gear_part_3_frame:
-          Value: true
-        logical_camera_1_gear_part_4_frame:
-          Value: true
-        logical_camera_1_gear_part_5_frame:
-          Value: true
-        logical_camera_1_gear_part_6_frame:
-          Value: true
-        logical_camera_1_gear_part_7_frame:
-          Value: true
-        logical_camera_1_gear_part_8_frame:
-          Value: true
-        logical_camera_1_gear_part_9_frame:
+        logical_camera_1_gasket_part_6_frame:
           Value: true
         logical_camera_2_frame:
           Value: true
-        logical_camera_2_shipping_box_1_frame:
-          Value: true
-        logical_camera_2_shipping_box_2_frame:
-          Value: true
-        logical_camera_2_shipping_box_3_frame:
+        logical_camera_3_frame:
           Value: true
         proximity_sensor_1_frame:
           Value: true
         quality_control_sensor_1_frame:
           Value: true
-        quality_control_sensor_1_piston_rod_part_0_frame:
-          Value: true
         quality_control_sensor_2_frame:
           Value: true
-        quality_control_sensor_2_piston_rod_part_0_frame:
-          Value: true
-        shoulder_link:
-          Value: true
-        tool0:
-          Value: true
-        upper_arm_link:
-          Value: true
-        vacuum_gripper_link:
-          Value: true
         world:
-          Value: true
-        wrist_1_link:
-          Value: true
-        wrist_2_link:
-          Value: true
-        wrist_3_link:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -158,6 +152,38 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
+          arm1_linear_arm_actuator:
+            arm1_base_link:
+              arm1_base:
+                {}
+              arm1_shoulder_link:
+                arm1_upper_arm_link:
+                  arm1_forearm_link:
+                    arm1_wrist_1_link:
+                      arm1_wrist_2_link:
+                        arm1_wrist_3_link:
+                          arm1_ee_link:
+                            {}
+                          arm1_tool0:
+                            {}
+                          arm1_vacuum_gripper_link:
+                            {}
+          arm2_linear_arm_actuator:
+            arm2_base_link:
+              arm2_base:
+                {}
+              arm2_shoulder_link:
+                arm2_upper_arm_link:
+                  arm2_forearm_link:
+                    arm2_wrist_1_link:
+                      arm2_wrist_2_link:
+                        arm2_wrist_3_link:
+                          arm2_ee_link:
+                            {}
+                          arm2_tool0:
+                            {}
+                          arm2_vacuum_gripper_link:
+                            {}
           belt_frame:
             {}
           bin1_frame:
@@ -170,277 +196,34 @@ Visualization Manager:
             {}
           bin5_frame:
             {}
+          bin6_frame:
+            {}
           break_beam_1_frame:
-            {}
-          congestion_sensor_frame:
-            {}
-          depth_camera_1_frame:
             {}
           laser_profiler_1_frame:
             {}
-          linear_arm_actuator:
-            base_link:
-              base:
-                {}
-              shoulder_link:
-                upper_arm_link:
-                  forearm_link:
-                    wrist_1_link:
-                      wrist_2_link:
-                        wrist_3_link:
-                          ee_link:
-                            {}
-                          tool0:
-                            {}
-                          vacuum_gripper_link:
-                            {}
           logical_camera_1_frame:
-            logical_camera_1_gear_part_10_frame:
+            logical_camera_1_gasket_part_1_frame:
               {}
-            logical_camera_1_gear_part_11_frame:
+            logical_camera_1_gasket_part_2_frame:
               {}
-            logical_camera_1_gear_part_12_frame:
+            logical_camera_1_gasket_part_3_frame:
               {}
-            logical_camera_1_gear_part_13_frame:
+            logical_camera_1_gasket_part_4_frame:
               {}
-            logical_camera_1_gear_part_14_frame:
-              {}
-            logical_camera_1_gear_part_15_frame:
-              {}
-            logical_camera_1_gear_part_1_frame:
-              {}
-            logical_camera_1_gear_part_2_frame:
-              {}
-            logical_camera_1_gear_part_3_frame:
-              {}
-            logical_camera_1_gear_part_4_frame:
-              {}
-            logical_camera_1_gear_part_5_frame:
-              {}
-            logical_camera_1_gear_part_6_frame:
-              {}
-            logical_camera_1_gear_part_7_frame:
-              {}
-            logical_camera_1_gear_part_8_frame:
-              {}
-            logical_camera_1_gear_part_9_frame:
+            logical_camera_1_gasket_part_6_frame:
               {}
           logical_camera_2_frame:
-            logical_camera_2_shipping_box_1_frame:
-              {}
-            logical_camera_2_shipping_box_2_frame:
-              {}
-            logical_camera_2_shipping_box_3_frame:
-              {}
+            {}
+          logical_camera_3_frame:
+            {}
           proximity_sensor_1_frame:
             {}
           quality_control_sensor_1_frame:
-            quality_control_sensor_1_piston_rod_part_0_frame:
-              {}
+            {}
           quality_control_sensor_2_frame:
-            quality_control_sensor_2_piston_rod_part_0_frame:
-              {}
+            {}
       Update Interval: 0
-      Value: true
-    - Alpha: 0.5
-      Buffer Length: 1
-      Class: rviz/Range
-      Color: 255; 255; 255
-      Enabled: true
-      Name: Range
-      Queue Size: 100
-      Topic: /ariac/proximity_sensor
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Class: rviz/RobotModel
-      Collision Enabled: false
-      Enabled: true
-      Links:
-        All Links Enabled: true
-        Expand Joint Details: false
-        Expand Link Details: false
-        Expand Tree: false
-        Link Tree Style: Links in Alphabetic Order
-        base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        belt_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        bin1_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        bin2_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        bin3_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        bin4_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        bin5_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        break_beam_1_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        congestion_sensor_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        depth_camera_1_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        ee_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        forearm_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        laser_profiler_1_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        linear_arm_actuator:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        proximity_sensor_1_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        quality_control_sensor_1_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        quality_control_sensor_2_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        shoulder_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        tool0:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        upper_arm_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        vacuum_gripper_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        world:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        wrist_1_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wrist_2_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wrist_3_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-      Name: RobotModel
-      Robot Description: robot_description
-      TF Prefix: ""
-      Update Interval: 0
-      Value: true
-      Visual Enabled: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 1.0706563
-        Min Value: 0.93035686
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud
-      Color: 255; 255; 255
-      Color Transformer: AxisColor
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 4096
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: PointCloud
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.00999999978
-      Style: Boxes
-      Topic: /ariac/depth_camera_1
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: false
-      Autocompute Value Bounds:
-        Max Value: 0.600000024
-        Min Value: 0
-        Value: false
-      Axis: Z
-      Channel Name: z
-      Class: rviz/LaserScan
-      Color: 255; 255; 255
-      Color Transformer: AxisColor
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 0.600000024
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: LaserScan
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.00999999978
-      Style: Flat Squares
-      Topic: /ariac/laser_profiler_1
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
       Value: true
   Enabled: true
   Global Options:
@@ -467,33 +250,33 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 6.31586695
+      Distance: 10
       Enable Stereo Rendering:
-        Stereo Eye Separation: 0.0599999987
+        Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.927544951
-        Y: 1.15990853
-        Z: 1.42485595
+        X: 0
+        Y: 0
+        Z: 0
       Focal Shape Fixed Size: true
-      Focal Shape Size: 0.0500000007
+      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.00999999978
-      Pitch: 0.5497967
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.785398006439209
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.81360054
+      Yaw: 0.785398006439209
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 846
+  Height: 890
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000016a000002dbfc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000014000002db000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d0061006700650000000227000000c80000000000000000fb0000000c00430061006d00650072006101000002d9000000160000000000000000000000010000010f000002b3fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003c000002b3000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004b00000003efc0100000002fb0000000800540069006d00650100000000000004b00000025800fffffffb0000000800540069006d0065010000000000000450000000000000000000000340000002db00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000156000002e0fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b000002e0000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f000002e0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b000002e0000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005c60000003efc0100000002fb0000000800540069006d00650100000000000005c60000024400fffffffb0000000800540069006d0065010000000000000450000000000000000000000355000002e000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -502,6 +285,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1200
-  X: 49
-  Y: 0
+  Width: 1478
+  X: 67
+  Y: 32
