@@ -48,7 +48,7 @@
   </gazebo>
 
   <gazebo>
-    <plugin name="ros_vacuum_gripper" filename="libROSVacuumGripperPlugin.so">
+    <plugin name="ros_vacuum_gripper_${arm_namespace}" filename="libROSVacuumGripperPlugin.so">
       <grasp_check>
         <detach_steps>40</detach_steps>
         <attach_steps>1</attach_steps>
