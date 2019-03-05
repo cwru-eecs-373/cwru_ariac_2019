@@ -66,6 +66,6 @@ belt_models:
         rpy: [0, 0, 'pi/2']
 
 faulty_products:
-  - piston_rod_part_0  # this product gets spawned in the tutorial
+  - piston_rod_part_5  # this product gets spawned in the tutorial
 
 time_limit: -1
