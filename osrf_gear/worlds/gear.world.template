@@ -499,7 +499,7 @@ count[product.type] = id + 1
         <collision name="rail_link_collision">
           <geometry>
             <box>
-              <size>0.2 4.0 0.1</size>
+              <size>0.2 4.6 0.1</size>
             </box>
           </geometry>
         </collision>
