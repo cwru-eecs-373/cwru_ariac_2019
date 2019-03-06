@@ -437,49 +437,6 @@ if '_update' in order_name:
       </link>
     </model>
 
-@[if options['fill_demo_shipment'] and orders and options['insert_shipping_boxes']]@
-@{
-order_name, order = orders.items()[0]
-count = {}
-}@
-    <!-- Populate shipping_box_0 with order products -->
-    <plugin filename="libPopulationPlugin.so" name="populate_box_0">
-      <activation_topic>/ariac/populate_belt</activation_topic>
-      <loop_forever>false</loop_forever>
-      <prefix_object_names>true</prefix_object_names>
-      <frame>shipping_box_0::box_base</frame>
-      <object_sequence>
-@[for product in order['products']]@
-        <object>
-          <time>0.0</time>
-          <type>@(product.type)</type>
-          <pose>@(' '.join(product.pose.xyz[0:-1])) 0.1 @(' '.join(product.pose.rpy))</pose>
-        </object>
-@[end for]@
-      </object_sequence>
-      <update_rate>10</update_rate>
-    </plugin>
-
-    <!-- Insert models to fill the shipping box -->
-@[for product in order['products']]@
-@{
-try:
-    id = count[product.type]
-except:
-    id = 0
-}@
-    <include>
-      <name>populate_box_0|@(product.type)_@(id)</name>
-      <uri>model://@(product.type)_ariac</uri>
-      <pose>-7.5 -3 -1.0 0 0 0</pose>
-    </include>
-@{
-count[product.type] = id + 1
-}@
-@[end for]@
-
-@[end if]@
-
     <!-- A visual and collision of the linear rail the robots ride on -->
     <model name="linear_rail">
       <pose>0.3 0 0.9 0 0 0</pose>

@@ -120,11 +120,8 @@ default_bin_origins = {
 }
 
 configurable_options = {
-    'insert_shipping_boxes': True,
     'insert_models_over_bins': False,
-    'start_box_at_belt_center': False,
     'disable_shadows': False,
-    'fill_demo_shipment': False,
     'belt_population_cycles': 5,
     'gazebo_state_logging': False,
     'spawn_extra_models': False,
@@ -194,8 +191,6 @@ def prepare_arguments(parser):
         help='direct the output of the gazebo ros node to log file instead of the console')
     add('--visualize-sensor-views', action='store_true', default=False,
         help='visualize the views of sensors in gazebo')
-    add('--fill-demo-shipment', action='store_true', default=False,
-        help='fill the first shippping box with the requested shipment on competiton start')
     mex_group = parser.add_mutually_exclusive_group(required=False)
     add = mex_group.add_argument
     add('config', nargs='?', metavar='CONFIG',
@@ -543,8 +538,6 @@ def prepare_template_data(config_dict, args):
     template_data['options'].update(create_options_info(options_dict))
     if args.state_logging is not None:
         template_data['options']['gazebo_state_logging'] = args.state_logging
-    if args.fill_demo_shipment:
-        template_data['options']['fill_demo_shipment'] = True
     if args.visualize_sensor_views:
         template_data['options']['visualize_sensor_views'] = True
 
