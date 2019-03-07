@@ -60,11 +60,14 @@ class MyCompetitionClass
 {
 public:
   explicit MyCompetitionClass(ros::NodeHandle & node)
-  : current_score_(0), has_been_zeroed_(false)
+  : current_score_(0), arm_1_has_been_zeroed_(false), arm_2_has_been_zeroed_(false)
   {
     // %Tag(ADV_CMD)%
-    joint_trajectory_publisher_ = node.advertise<trajectory_msgs::JointTrajectory>(
-      "/ariac/arm/command", 10);
+    arm_1_joint_trajectory_publisher_ = node.advertise<trajectory_msgs::JointTrajectory>(
+      "/ariac/arm1/arm/command", 10);
+
+    arm_2_joint_trajectory_publisher_ = node.advertise<trajectory_msgs::JointTrajectory>(
+      "/ariac/arm2/arm/command", 10);
     // %EndTag(ADV_CMD)%
   }
 
@@ -94,24 +97,38 @@ public:
 
   // %Tag(CB_CLASS)%
   /// Called when a new JointState message is received.
-  void joint_state_callback(
+  void arm_1_joint_state_callback(
     const sensor_msgs::JointState::ConstPtr & joint_state_msg)
   {
     ROS_INFO_STREAM_THROTTLE(10,
-      "Joint States (throttled to 0.1 Hz):\n" << *joint_state_msg);
+      "Joint States arm 1 (throttled to 0.1 Hz):\n" << *joint_state_msg);
     // ROS_INFO_STREAM("Joint States:\n" << *joint_state_msg);
-    current_joint_states_ = *joint_state_msg;
-    if (!has_been_zeroed_) {
-      has_been_zeroed_ = true;
+    arm_1_current_joint_states_ = *joint_state_msg;
+    if (!arm_1_has_been_zeroed_) {
+      arm_1_has_been_zeroed_ = true;
       ROS_INFO("Sending arm to zero joint positions...");
-      send_arm_to_zero_state();
+      send_arm_to_zero_state(arm_1_joint_trajectory_publisher_);
+    }
+  }
+
+  void arm_2_joint_state_callback(
+    const sensor_msgs::JointState::ConstPtr & joint_state_msg)
+  {
+    ROS_INFO_STREAM_THROTTLE(10,
+      "Joint States arm 2 (throttled to 0.1 Hz):\n" << *joint_state_msg);
+    // ROS_INFO_STREAM("Joint States:\n" << *joint_state_msg);
+    arm_2_current_joint_states_ = *joint_state_msg;
+    if (!arm_2_has_been_zeroed_) {
+      arm_2_has_been_zeroed_ = true;
+      ROS_INFO("Sending arm 2 to zero joint positions...");
+      send_arm_to_zero_state(arm_2_joint_trajectory_publisher_);
     }
   }
   // %EndTag(CB_CLASS)%
 
   // %Tag(ARM_ZERO)%
   /// Create a JointTrajectory with all positions set to zero, and command the arm.
-  void send_arm_to_zero_state() {
+  void send_arm_to_zero_state(ros::Publisher & joint_trajectory_publisher) {
     // Create a message to send.
     trajectory_msgs::JointTrajectory msg;
 
@@ -133,7 +150,7 @@ public:
     // How long to take getting to the point (floating point seconds).
     msg.points[0].time_from_start = ros::Duration(0.001);
     ROS_INFO_STREAM("Sending command:\n" << msg);
-    joint_trajectory_publisher_.publish(msg);
+    joint_trajectory_publisher.publish(msg);
   }
   // %EndTag(ARM_ZERO)%
 
@@ -155,10 +172,13 @@ public:
 private:
   std::string competition_state_;
   double current_score_;
-  ros::Publisher joint_trajectory_publisher_;
+  ros::Publisher arm_1_joint_trajectory_publisher_;
+  ros::Publisher arm_2_joint_trajectory_publisher_;
   std::vector<osrf_gear::Order> received_orders_;
-  sensor_msgs::JointState current_joint_states_;
-  bool has_been_zeroed_;
+  sensor_msgs::JointState arm_1_current_joint_states_;
+  sensor_msgs::JointState arm_2_current_joint_states_;
+  bool arm_1_has_been_zeroed_;
+  bool arm_2_has_been_zeroed_;
 };
 
 void proximity_sensor_callback(const sensor_msgs::Range::ConstPtr & msg) {
@@ -203,9 +223,13 @@ int main(int argc, char ** argv) {
   // %EndTag(SUB_CLASS)%
 
   // Subscribe to the '/ariac/joint_states' topic.
-  ros::Subscriber joint_state_subscriber = node.subscribe(
-    "/ariac/joint_states", 10,
-    &MyCompetitionClass::joint_state_callback, &comp_class);
+  ros::Subscriber arm_1_joint_state_subscriber = node.subscribe(
+    "/ariac/arm1/joint_states", 10,
+    &MyCompetitionClass::arm_1_joint_state_callback, &comp_class);
+
+  ros::Subscriber arm_2_joint_state_subscriber = node.subscribe(
+    "/ariac/arm2/joint_states", 10,
+    &MyCompetitionClass::arm_2_joint_state_callback, &comp_class);
 
   // %Tag(SUB_FUNC)%
   // Subscribe to the '/ariac/proximity_sensor_1' topic.
