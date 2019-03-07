@@ -2,7 +2,7 @@
 <package format="2">
   <name>ariac_example</name>
   <version>0.1.0</version>
-  <description>An example of an ARIAC competitor's package.</description>
+  <description>An example of an ARIAC competitor's package for ARIAC 2019.</description>
   <maintainer email="william@osrfoundation.org">William Woodall</maintainer>
 
   <license>Apache 2.0</license>
