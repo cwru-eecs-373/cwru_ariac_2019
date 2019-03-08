@@ -85,8 +85,9 @@ namespace gazebo
     /// \brief ROS subscriber for the shipping box states.
     public: ros::Subscriber shippingBoxInfoSub;
 
-    /// \brief ROS subscriber for the gripper state.
-    public: ros::Subscriber gripperStateSub;
+    /// \brief ROS subscribers for the gripper state.
+    public: ros::Subscriber gripper1StateSub;
+    public: ros::Subscriber gripper2StateSub;
 
     /// \brief Publishes the Gazebo task state.
     public: ros::Publisher taskStatePub;
@@ -502,9 +503,14 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
 
   // Initialize the game scorer.
   this->dataPtr->shippingBoxInfoSub = this->dataPtr->rosnode->subscribe(
-    "/ariac/shipping_boxes", 10, &AriacScorer::OnShippingBoxInfoReceived, &this->dataPtr->ariacScorer);
-  this->dataPtr->gripperStateSub = this->dataPtr->rosnode->subscribe(
-    "/ariac/gripper/state", 10, &AriacScorer::OnGripperStateReceived,
+    "/ariac/trays", 10, &AriacScorer::OnShippingBoxInfoReceived, &this->dataPtr->ariacScorer);
+
+  this->dataPtr->gripper1StateSub = this->dataPtr->rosnode->subscribe(
+    "/ariac/arm1/gripper/state", 10, &AriacScorer::OnGripperStateReceived,
+    &this->dataPtr->ariacScorer);
+
+  this->dataPtr->gripper2StateSub = this->dataPtr->rosnode->subscribe(
+    "/ariac/arm2/gripper/state", 10, &AriacScorer::OnGripperStateReceived,
     &this->dataPtr->ariacScorer);
 
   this->dataPtr->serverControlPub =
