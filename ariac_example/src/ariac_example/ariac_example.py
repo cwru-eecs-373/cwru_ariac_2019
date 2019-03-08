@@ -50,14 +50,17 @@ def start_competition():
     return response.success
 
 
-def control_gripper(enabled):
+def control_gripper(enabled, arm):
+    if arm not in (1, 2):
+        raise ValueError('Only two arms (1 or 2)')
     rospy.loginfo("Waiting for gripper control to be ready...")
-    rospy.wait_for_service('/ariac/gripper/control')
+    service_name = '/ariac/arm{}/gripper/control'.format(arm)
+    rospy.wait_for_service(service_name)
     rospy.loginfo("Gripper control is now ready.")
     rospy.loginfo("Requesting gripper control...")
 
     try:
-        gripper_control = rospy.ServiceProxy('/ariac/gripper/control', VacuumGripperControl)
+        gripper_control = rospy.ServiceProxy(service_name, VacuumGripperControl)
         response = gripper_control(enabled)
     except rospy.ServiceException as exc:
         rospy.logerr("Failed to control the gripper: %s" % exc)
@@ -69,57 +72,24 @@ def control_gripper(enabled):
     return response.success
 
 
-def control_drone(shipment_type):
-    rospy.loginfo("Waiting for drone control to be ready...")
-    name = '/ariac/drone'
-    rospy.wait_for_service(name)
-    rospy.loginfo("Drone control is now ready.")
-    rospy.loginfo("Requesting drone control...")
-
-    try:
-        drone_control = rospy.ServiceProxy(name, DroneControl)
-        response = drone_control(shipment_type)
-    except rospy.ServiceException as exc:
-        rospy.logerr("Failed to control the drone: %s" % exc)
-        return False
-    if not response.success:
-        rospy.logerr("Failed to control the drone: %s" % response)
-    else:
-        rospy.loginfo("Drone controlled successfully")
-    return response.success
-
-
-def control_conveyor(power):
-    rospy.loginfo("Waiting for conveyor control to be ready...")
-    name = '/ariac/conveyor/control'
-    rospy.wait_for_service(name)
-    rospy.loginfo("Conveyor control is now ready.")
-    rospy.loginfo("Requesting conveyor control...")
-
-    try:
-        conveyor_control = rospy.ServiceProxy(name, ConveyorBeltControl)
-        response = conveyor_control(power)
-    except rospy.ServiceException as exc:
-        rospy.logerr("Failed to control the conveyor: %s" % exc)
-        return False
-    if not response.success:
-        rospy.logerr("Failed to control the conveyor: %s" % response)
-    else:
-        rospy.loginfo("Conveyor controlled successfully")
-    return response.success
-
-
 class MyCompetitionClass:
     def __init__(self):
-        self.joint_trajectory_publisher = \
-            rospy.Publisher("/ariac/arm/command", JointTrajectory, queue_size=10)
+        self.arm_1_joint_trajectory_publisher = \
+            rospy.Publisher("/ariac/arm1/arm/command", JointTrajectory, queue_size=10)
+        self.arm_2_joint_trajectory_publisher = \
+            rospy.Publisher("/ariac/arm2/arm/command", JointTrajectory, queue_size=10)
         self.current_comp_state = None
         self.received_orders = []
-        self.current_joint_state = None
-        self.current_gripper_state = None
-        self.last_joint_state_print = time.time()
-        self.last_gripper_state_print = time.time()
-        self.has_been_zeroed = False
+        self.arm_1_current_joint_state = None
+        self.arm_2_current_joint_state = None
+        self.arm_1_current_gripper_state = None
+        self.arm_2_current_gripper_state = None
+        self.last_arm_1_joint_state_print = time.time()
+        self.last_arm_2_joint_state_print = time.time()
+        self.last_arm_1_gripper_state_print = time.time()
+        self.last_arm_2_gripper_state_print = time.time()
+        self.arm_1_has_been_zeroed = False
+        self.arm_2_has_been_zeroed = False
         self.arm_joint_names = [
             'shoulder_pan_joint',
             'shoulder_lift_joint',
@@ -139,19 +109,31 @@ class MyCompetitionClass:
         rospy.loginfo("Received order:\n" + str(msg))
         self.received_orders.append(msg)
 
-    def joint_state_callback(self, msg):
-        if time.time() - self.last_joint_state_print >= 10:
-            rospy.loginfo("Current Joint States (throttled to 0.1 Hz):\n" + str(msg))
-            self.last_joint_state_print = time.time()
-        self.current_joint_state = msg
+    def arm_1_joint_state_callback(self, msg):
+        if time.time() - self.last_arm_1_joint_state_print >= 10:
+            rospy.loginfo("Current Arm 1 Joint States (throttled to 0.1 Hz):\n" + str(msg))
+            self.last_arm_1_joint_state_print = time.time()
+        self.arm_1_current_joint_state = msg
 
-    def gripper_state_callback(self, msg):
-        if time.time() - self.last_gripper_state_print >= 10:
-            rospy.loginfo("Current gripper state (throttled to 0.1 Hz):\n" + str(msg))
-            self.last_gripper_state_print = time.time()
-        self.current_gripper_state = msg
+    def arm_2_joint_state_callback(self, msg):
+        if time.time() - self.last_arm_2_joint_state_print >= 10:
+            rospy.loginfo("Current Arm 2 Joint States (throttled to 0.1 Hz):\n" + str(msg))
+            self.last_arm_2_joint_state_print = time.time()
+        self.arm_2_current_joint_state = msg
 
-    def send_arm_to_state(self, positions):
+    def arm_1_gripper_state_callback(self, msg):
+        if time.time() - self.last_arm_1_gripper_state_print >= 10:
+            rospy.loginfo("Current Arm 1 gripper state (throttled to 0.1 Hz):\n" + str(msg))
+            self.last_arm_1_gripper_state_print = time.time()
+        self.arm_1_current_gripper_state = msg
+
+    def arm_2_gripper_state_callback(self, msg):
+        if time.time() - self.last_arm_2_gripper_state_print >= 10:
+            rospy.loginfo("Current Arm 2 gripper state (throttled to 0.1 Hz):\n" + str(msg))
+            self.last_arm_2_gripper_state_print = time.time()
+        self.arm_2_current_gripper_state = msg
+
+    def send_arm_to_state(self, positions, publisher):
         msg = JointTrajectory()
         msg.joint_names = self.arm_joint_names
         point = JointTrajectoryPoint()
@@ -159,7 +141,7 @@ class MyCompetitionClass:
         point.time_from_start = rospy.Duration(1.0)
         msg.points = [point]
         rospy.loginfo("Sending command:\n" + str(msg))
-        self.joint_trajectory_publisher.publish(msg)
+        publisher.publish(msg)
 
 
 def connect_callbacks(comp_class):
@@ -167,6 +149,10 @@ def connect_callbacks(comp_class):
         "/ariac/competition_state", String, comp_class.comp_state_callback)
     order_sub = rospy.Subscriber("/ariac/orders", Order, comp_class.order_callback)
     joint_state_sub = rospy.Subscriber(
-        "/ariac/joint_states", JointState, comp_class.joint_state_callback)
+        "/ariac/arm1/joint_states", JointState, comp_class.arm_1_joint_state_callback)
+    joint_state_sub = rospy.Subscriber(
+        "/ariac/arm2/joint_states", JointState, comp_class.arm_2_joint_state_callback)
     gripper_state_sub = rospy.Subscriber(
-        "/ariac/gripper/state", VacuumGripperState, comp_class.gripper_state_callback)
+        "/ariac/arm1/gripper/state", VacuumGripperState, comp_class.arm_1_gripper_state_callback)
+    gripper_state_sub = rospy.Subscriber(
+        "/ariac/arm2/gripper/state", VacuumGripperState, comp_class.arm_1_gripper_state_callback)
