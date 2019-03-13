@@ -491,7 +491,7 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
     std::string sensorEnableTopic = sensorBlackoutElem->Get<std::string>("topic");
     this->dataPtr->sensorBlackoutProductCount = sensorBlackoutElem->Get<int>("product_count");
     this->dataPtr->sensorBlackoutDuration = sensorBlackoutElem->Get<double>("duration");
-    this->dataPtr->sensorBlackoutControlPub = 
+    this->dataPtr->sensorBlackoutControlPub =
       this->dataPtr->node->Advertise<msgs::GzString>(sensorEnableTopic);
   }
 
@@ -628,13 +628,14 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
   {
 
     // Update the order manager.
-    this->ProcessOrdersToAnnounce();
+    this->ProcessOrdersToAnnounce(currentSimTime);
 
     // Update the sensors if appropriate.
     this->ProcessSensorBlackout();
 
     // Update the score.
-    this->dataPtr->ariacScorer.Update(elapsedTime);
+    // this->dataPtr->ariacScorer.Update(elapsedTime);
+    /*
     auto gameScore = this->dataPtr->ariacScorer.GetGameScore();
     if (gameScore.total() != this->dataPtr->currentGameScore.total())
     {
@@ -664,6 +665,7 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
       }
       else
       {
+        ROS_ERROR_THROTTLE(1.0, "Order %s is incomplete", orderID.c_str());
         // Check if the time limit for the current order has been exceeded.
         if (this->dataPtr->timeSpentOnCurrentOrder > this->dataPtr->ordersInProgress.top().allowedTime)
         {
@@ -675,6 +677,7 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
         }
       }
     }
+    */
 
     if (this->dataPtr->ordersInProgress.empty() && this->dataPtr->ordersToAnnounce.empty())
     {
@@ -684,6 +687,7 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
   }
   else if (this->dataPtr->currentState == "end_game")
   {
+    /*
     this->dataPtr->currentGameScore = this->dataPtr->ariacScorer.GetGameScore();
     if (this->dataPtr->gameStartTime != common::Time())
     {
@@ -696,6 +700,7 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
       this->dataPtr->currentGameScore;
     ROS_INFO_STREAM(logMessage.str().c_str());
     gzdbg << logMessage.str() << std::endl;
+    */
     this->dataPtr->currentState = "done";
 
     auto v = std::getenv("ARIAC_EXIT_ON_COMPLETION");
@@ -736,7 +741,7 @@ void ROSAriacTaskManagerPlugin::PublishStatus(const ros::TimerEvent&)
 }
 
 /////////////////////////////////////////////////
-void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce()
+void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce(gazebo::common::Time simTime)
 {
   if (this->dataPtr->ordersToAnnounce.empty())
     return;
@@ -772,6 +777,7 @@ void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce()
     }
 
     // Check the shipping boxes for products from the pending order
+    /*
     std::vector<int> numUnwantedProductsInShippingBoxes;
     std::vector<int> numWantedProductsInShippingBoxes;
     for (const auto & shippingBox : this->dataPtr->ariacScorer.GetShippingBoxes())
@@ -806,6 +812,7 @@ void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce()
     // Announce next order if the appropriate number of wanted/unwanted products are detected
     announceNextOrder |= interruptOnWantedProducts && (maxNumWantedProducts >= nextOrder.interruptOnWantedProducts);
     announceNextOrder |= interruptOnUnwantedProducts && (maxNumUnwantedProducts >= nextOrder.interruptOnUnwantedProducts);
+    */
   }
 
   if (announceNextOrder)
@@ -818,8 +825,10 @@ void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce()
 
       // Update the order the scorer's monitoring
       gzdbg << "Updating order: " << nextOrder << std::endl;
-      nextOrder.orderID = nextOrder.orderID.substr(0, updateLocn);
-      this->dataPtr->ariacScorer.UpdateOrder(nextOrder);
+      auto nextOrderID = nextOrder.orderID.substr(0, updateLocn);
+      osrf_gear::Order orderMsg;
+      fillOrderMsg(nextOrder, orderMsg);
+      this->dataPtr->ariacScorer.NotifyOrderUpdated(simTime, nextOrderID, orderMsg);
       this->dataPtr->ordersToAnnounce.erase(this->dataPtr->ordersToAnnounce.begin());
       return;
     }
@@ -830,7 +839,12 @@ void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce()
     this->dataPtr->ordersInProgress.push(ariac::Order(nextOrder));
     this->dataPtr->ordersToAnnounce.erase(this->dataPtr->ordersToAnnounce.begin());
 
-    this->AssignOrder(nextOrder);
+    this->AnnounceOrder(nextOrder);
+    // Assign the scorer the order to monitor
+    gzdbg << "Assigning order: " << nextOrder << std::endl;
+    osrf_gear::Order orderMsg;
+    fillOrderMsg(nextOrder, orderMsg);
+    this->dataPtr->ariacScorer.NotifyOrderStarted(simTime, orderMsg);
   }
 }
 
@@ -843,6 +857,7 @@ void ROSAriacTaskManagerPlugin::ProcessSensorBlackout()
   {
     // Count total products in all boxes.
     int totalProducts = 0;
+    /*
     for (const auto & shippingBox : this->dataPtr->ariacScorer.GetShippingBoxes())
     {
       totalProducts += shippingBox.currentShipment.products.size();
@@ -857,6 +872,7 @@ void ROSAriacTaskManagerPlugin::ProcessSensorBlackout()
       this->dataPtr->sensorBlackoutStartTime = currentSimTime;
       this->dataPtr->sensorBlackoutInProgress = true;
     }
+    */
   }
   if (this->dataPtr->sensorBlackoutInProgress)
   {
@@ -944,7 +960,7 @@ bool ROSAriacTaskManagerPlugin::HandleSubmitTrayService(
   // shippingBox.currentShipment.shipmentType = req.shipment_type;
   res.success = true;
   // res.inspection_result = this->dataPtr->ariacScorer.SubmitShipment(shippingBox).total();
-  res.inspection_result = 0; 
+  res.inspection_result = 0;
   gzdbg << "Inspection result: " << res.inspection_result << std::endl;
   return true;
 }
@@ -1069,16 +1085,6 @@ void ROSAriacTaskManagerPlugin::AnnounceOrder(const ariac::Order & order)
 }
 
 /////////////////////////////////////////////////
-void ROSAriacTaskManagerPlugin::AssignOrder(const ariac::Order & order)
-{
-    this->AnnounceOrder(order);
-
-    // Assign the scorer the order to monitor
-    gzdbg << "Assigning order: " << order << std::endl;
-    this->dataPtr->ariacScorer.AssignOrder(order);
-}
-
-/////////////////////////////////////////////////
 void ROSAriacTaskManagerPlugin::StopCurrentOrder()
 {
   // Stop the current order; any previous orders that are incomplete will automatically be resumed
@@ -1087,6 +1093,5 @@ void ROSAriacTaskManagerPlugin::StopCurrentOrder()
     auto orderID = this->dataPtr->ordersInProgress.top().orderID;
     gzdbg << "Stopping order: " << orderID << std::endl;
     this->dataPtr->ordersInProgress.pop();
-    this->dataPtr->ariacScorer.UnassignOrder(orderID);
   }
 }

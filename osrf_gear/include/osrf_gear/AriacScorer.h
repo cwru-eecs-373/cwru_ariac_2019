@@ -26,111 +26,85 @@
 
 #include <ros/ros.h>
 
-#include "osrf_gear/ARIAC.hh"
-#include "osrf_gear/AriacShippingBox.h"
-#include <osrf_gear/ShippingBox.h>
+#include <osrf_gear/ARIAC.hh>
+#include <osrf_gear/DetectedShipment.h>
 #include <osrf_gear/Order.h>
-#include <osrf_gear/ShippingBoxContents.h>
+#include <osrf_gear/SubmitShipment.h>
 #include "osrf_gear/VacuumGripperState.h"
+
+// Ariac scorer needs to know when an order starts
+// Order
+//    shipments in that order
+//    start time of the order
+//    end time of the order
+// Tell scorer when an order starts
+// tell scorer when a shipment is submitted
 
 /// \brief A scorer for the ARIAC game.
 class AriacScorer
 {
+  protected:
+    struct OrderInfo
+    {
+      gazebo::common::Time start_time;
+      int priority;
+      osrf_gear::Order::ConstPtr order;
+    };
+
+    struct OrderUpdateInfo
+    {
+      ariac::OrderID_t original_order_id;
+      gazebo::common::Time update_time;
+      osrf_gear::Order::ConstPtr order;
+    };
+
+    struct ShipmentInfo
+    {
+      gazebo::common::Time submit_time;
+      ariac::ShipmentType_t type;
+      osrf_gear::DetectedShipment::ConstPtr shipment;
+    };
+
   /// \brief Constructor.
   public: AriacScorer();
 
   /// \brief Destructor.
   public: virtual ~AriacScorer();
 
-  /// \brief Update the scorer.
-  public: void Update(double timeStep = 0.0);
+  /// \brief Tell scorer a new order was published
+  /// \param[in] time when in sim time the order was published
+  /// \param[in] order the order that was sent to teams
+  public: void NotifyOrderStarted(gazebo::common::Time time, const osrf_gear::Order & order);
+
+  /// \brief Tell scorer an existing order was updated
+  /// \param[in] time when in sim time the update to the order was published
+  /// \param[in] order the order that was sent to teams
+  public: void NotifyOrderUpdated(gazebo::common::Time time, ariac::OrderID_t old_order, const osrf_gear::Order & order);
+
+  /// \brief Tell scorer a shipment was recieved
+  public: void NotifyShipmentReceived(gazebo::common::Time time, ariac::ShipmentType_t type, const osrf_gear::DetectedShipment & actualShipment);
+
+  /// \brief Tell scorer that the two arms collided with each other
+  /// \param[in] time when the collision occurred
+  public: void NotifyArmArmCollision(gazebo::common::Time time);
 
   /// \brief Get the current score.
-  /// \param[in] The time in seconds since the last update.
   /// \return The score for the game.
   public: ariac::GameScore GetGameScore();
 
-  /// \brief Get the score of the current order.
-  /// \return True if the order is complete.
-  public: bool IsOrderComplete(const ariac::OrderID_t & orderID);
-
-  /// \brief Get the score of the current order.
-  /// \return The score for the order.
-  public: ariac::OrderScore GetOrderScore(const ariac::OrderID_t & orderID);
-
-  /// \brief Assign an order to process.
-  /// \param[in] order The order.
-  public: void AssignOrder(const ariac::Order & order);
-
-  /// \brief Update a previously-assigned order.
-  /// \param[in] order The order.
-  public: void UpdateOrder(const ariac::Order & order);
-
-  /// \brief Stop processing the current order.
-  /// \param[in] timeTaken The time spent on the order.
-  /// \return The score for the order.
-  public: ariac::OrderScore UnassignOrder(const ariac::OrderID_t & orderID);
-
-  /// \brief Get the shipping boxes the scorer is monitoring.
-  /// \return Vector of shipping box states.
-  public: std::vector<ariac::ShippingBox> GetShippingBoxes();
-
-  /// \brief Get the shipping box with the specified ID.
-  /// \param[in] shippingBoxID The ID of the shipping box to get.
-  /// \param[in] shippingBox The shippingBox found.
-  /// \return True if the shipping box was found, false otherwise.
-  public: bool GetShippingBoxById(const ariac::ShippingBoxID_t & shippingBoxID, ariac::ShippingBox & shippingBox);
-
-  /// \brief Submit shipping box for scoring and store the result in the order score.
-  public: ariac::ShipmentScore SubmitShipment(const ariac::ShippingBox & shippingBox);
-
-  /// \brief Calculate the score for a shipping box given the type of shipment being built.
-  protected: ariac::ShipmentScore ScoreShippingBox(const ariac::ShippingBox & shippingBox, const ariac::Shipment & assignedShipment);
-
-  /// \brief Helper function for filling a Shipment from a shipping box contents ROS message.
-  public: static void FillShipmentFromMsg(const osrf_gear::ShippingBoxContents::ConstPtr & shippingBoxMsg, ariac::Shipment & shipment);
-
-  /// \brief Helper function for filling a Shipment from a shipment ROS message.
-  public: static void FillShipmentFromMsg(const osrf_gear::Shipment & shipmentMsg, ariac::Shipment & shipment);
-
-  /// \brief Callback for receiving order message.
-  public: void OnOrderReceived(const osrf_gear::Order::ConstPtr & orderMsg);
-
-  /// \brief Callback for receiving shipping box state message.
-  public: void OnShippingBoxInfoReceived(const osrf_gear::ShippingBoxContents::ConstPtr & shippingBoxMsg);
-
-  /// \brief Callback for receiving gripper state message.
-  public: void OnGripperStateReceived(const osrf_gear::VacuumGripperState &stateMsg);
-
-  /// \brief The shipping boxes to monitor the score of.
-  protected: std::map<ariac::ShippingBoxID_t, ariac::ShippingBox> shippingBoxes;
-
-  /// \brief Mutex for protecting the orders being scored.
+  /// \brief Mutex for protecting this class
   protected: mutable boost::mutex mutex;
 
-  /// \brief Collection of orders that have been announced but are not yet complete.
-  protected: std::vector<ariac::Order> ordersInProgress;
+  /// \brief Collection of orders that have been announced
+  protected: std::map<ariac::OrderID_t, struct OrderInfo> orders;
 
-  /// \brief Flag for signalling new shipping box info to process.
-  protected: bool newShippingBoxInfoReceived = false;
+  /// \brief Collection of updates to orders
+  protected: std::vector<struct OrderUpdateInfo> order_updates;
 
-  /// \brief Flag for signalling new order to process.
-  protected: bool newOrderReceived = false;
+  /// \brief Collection of shipments that have been received
+  protected: std::vector<struct ShipmentInfo> shipments;
 
-  /// \brief Whether or not there is a travelling product in the gripper.
-  protected: bool isProductTravelling = false;
-
-  /// \brief Order receivd from order messages.
-  protected: ariac::Order newOrder;
-
-  /// \brief Parameters to use for calculating scores.
-  protected: ariac::ScoringParameters scoringParameters;
-
-  /// \brief Pointer to the score of the current order.
-  protected: ariac::OrderScore* orderScore;
-
-  /// \brief The score of the run.
-  protected: ariac::GameScore gameScore;
-
+  /// \brief True if the arms collided with each other
+  protected: bool arm_arm_collision = false;
 };
 #endif

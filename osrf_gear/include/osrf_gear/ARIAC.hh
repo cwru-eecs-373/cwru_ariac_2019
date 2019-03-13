@@ -31,7 +31,6 @@ namespace ariac
 
   typedef std::string KitType_t;
   typedef std::string ShipmentType_t;
-  typedef std::string ShippingBoxID_t;
   typedef std::string OrderID_t;
 
   /// \brief The score of a shipment.
@@ -60,6 +59,7 @@ namespace ariac
             double productPose = 0.0;
             bool isComplete = false;  // All products present
             bool isSubmitted = false;  // the shipment has been submitted for evaluation
+            gazebo::common::Time submit_time;  // sim time when shipment submitted
 
             /// \brief Calculate the total score.
             double total() const
@@ -82,6 +82,7 @@ namespace ariac
       _out << "Total order score: [" << _obj.total() << "]" << std::endl;
       _out << "Time taken: [" << _obj.timeTaken << "]" << std::endl;
       _out << "Complete: [" << (_obj.isComplete() ? "true" : "false") << "]" << std::endl;
+      _out << "Priority: [" << (_obj.priority) << "]\n";
       for (const auto & item : _obj.shipmentScores)
       {
         _out << item.second << std::endl;
@@ -99,21 +100,25 @@ namespace ariac
             /// \brief Time in seconds spend on the order.
             double timeTaken = 0.0;
 
+            /// \brief Factor indicating order priority (Allowed values 1 or 3)
+            int priority = 1;
+
+            /// \brief simulation time when order was started
+            gazebo::common::Time start_time;
+
             /// \brief Calculate if the order is complete.
             /// \return True if all shipping boxes have been submitted.
             ///   Will return false if there are no shipping boxes in the order.
             bool isComplete() const
             {
-              bool isOrderComplete = !this->shipmentScores.empty();
               for (const auto & item : this->shipmentScores)
               {
-                isOrderComplete &= item.second.isSubmitted;
-                if (!isOrderComplete)
+                if (!item.second.isSubmitted)
                 {
-                  break;
+                  return false;
                 }
               }
-              return isOrderComplete;
+              return true;
             };
 
             /// \brief Calculate the total score.
@@ -124,7 +129,7 @@ namespace ariac
               {
                 total += item.second.total();
               }
-              return total;
+              return total * priority;
             };
   };
 
@@ -141,7 +146,7 @@ namespace ariac
       _out << "<game_score>" << std::endl;
       _out << "Total game score: [" << _obj.total() << "]" << std::endl;
       _out << "Total process time: [" << _obj.totalProcessTime << "]" << std::endl;
-      _out << "Product travel time: [" << _obj.productTravelTime << "]" << std::endl;
+      _out << "Was arm/arm collision?: [" << _obj.was_arm_arm_collision << "]" << std::endl;
       for (const auto & item : _obj.orderScores)
       {
         _out << item.second << std::endl;
@@ -151,10 +156,7 @@ namespace ariac
     }
 
     public: double totalProcessTime = 0.0;
-            double productTravelTime = 0.0;
-            double planningTime = 0.0;
-            double productTravelDistance = 0.0;
-            double manipulatorTravelDistance = 0.0;
+            bool was_arm_arm_collision = false;
 
             // The score of each of the orders during the game.
             std::map<OrderID_t, OrderScore> orderScores;
@@ -162,14 +164,11 @@ namespace ariac
             /// \brief Calculate the total score.
             double total() const
             {
+              if (was_arm_arm_collision)
+              {
+                return 0;
+              }
               double total = 0;
-              /*
-              total += totalProcessTime;
-              total += productTravelTime;
-              total += planningTime;
-              total += productTravelDistance;
-              total += manipulatorTravelDistance;
-              */
 
               for (const auto & item : this->orderScores)
               {
@@ -177,51 +176,6 @@ namespace ariac
               }
               return total;
             };
-  };
-
-  /// \brief The parameters used for scoring the competition.
-  // TODO: this should have a different data type
-  class ScoringParameters
-  {
-    /// \brief Equality comparison operator.
-    /// \param[in] sp1 First parameters to compare.
-    /// \param[in] sp2 Second parameters to compare.
-    /// \return True if sp1 == sp2.
-    public: friend bool operator==(const ScoringParameters &sp1, const ScoringParameters &sp2)
-    {
-      return (
-        sp1.productPresence == sp2.productPresence &&
-        sp1.productPosition == sp2.productPosition &&
-        sp1.productOrientation == sp2.productOrientation &&
-        sp1.allProductsBonusFactor == sp2.allProductsBonusFactor &&
-        sp1.distanceThresh == sp2.distanceThresh);
-    }
-
-    /// \brief Inequality comparison operator.
-    /// \param[in] sp1 First parameters to compare.
-    /// \param[in] sp2 Second parameters to compare.
-    /// \return True if sp1 != sp2.
-    public: friend bool operator!=(const ScoringParameters &sp1, const ScoringParameters &sp2)
-    {
-      return !(sp1 == sp2);
-    }
-
-    public: double productPresence = 1.0;
-    public: double productPosition = 0.0;
-    public: double productOrientation = 1.0;
-
-    // Bonus when all products in the shipment: factor * (number of products)
-    public: double allProductsBonusFactor = 1.0;
-
-    // Acceptable distance in meters to product's target position.
-    // The measured distance is between the center of the model and its target,
-    // projected onto the shipping box.
-    public: double distanceThresh = 0.03;
-
-    // Acceptable difference in radians to product's target orientation.
-    // The measured difference is from a top-down view of the shipping box, but only if
-    // the quaternions are aligned.
-    public: double orientationThresh = 0.1;
   };
 
   /// \brief Determine the model name without namespace

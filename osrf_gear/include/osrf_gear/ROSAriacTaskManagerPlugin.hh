@@ -121,7 +121,7 @@ namespace gazebo
     protected: void OnUpdate();
 
     /// \brief Decide whether to announce a new order.
-    protected: void ProcessOrdersToAnnounce();
+    protected: void ProcessOrdersToAnnounce(gazebo::common::Time simTime);
 
     /// \brief Enable control of the conveyor belt.
     protected: void EnableConveyorBeltControl();
@@ -157,9 +157,6 @@ namespace gazebo
 
     /// \brief Announce an order to participants.
     protected: void AnnounceOrder(const ariac::Order & order);
-
-    /// \brief Assign an order to be monitored by the scorer.
-    protected: void AssignOrder(const ariac::Order & order);
 
     /// \brief Stop scoring the current order and assign the next order on stack.
     protected: void StopCurrentOrder();

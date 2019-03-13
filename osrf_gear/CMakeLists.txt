@@ -424,3 +424,13 @@ install(DIRECTORY vendor/
 catkin_add_env_hooks(99_osrf_gear_setup
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
   SHELLS sh)
+
+################
+## Unit tests ##
+################
+
+if (CATKIN_ENABLE_TESTING)
+  catkin_add_gtest(test_ariac_scorer test/test_ariac_scorer.cpp)
+  target_link_libraries(test_ariac_scorer
+    AriacScorer ignition-math4::ignition-math4)
+endif()
