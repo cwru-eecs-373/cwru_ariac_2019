@@ -540,18 +540,6 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
   this->dataPtr->populatePub =
     this->dataPtr->node->Advertise<msgs::GzString>(populationActivateTopic);
 
-  // Initialize the game scorer.
-  // this->dataPtr->shippingBoxInfoSub = this->dataPtr->rosnode->subscribe(
-  //   "/ariac/trays", 10, &AriacScorer::OnShippingBoxInfoReceived, &this->dataPtr->ariacScorer);
-
-  // this->dataPtr->gripper1StateSub = this->dataPtr->rosnode->subscribe(
-  //   "/ariac/arm1/gripper/state", 10, &AriacScorer::OnGripperStateReceived,
-  //   &this->dataPtr->ariacScorer);
-
-  // this->dataPtr->gripper2StateSub = this->dataPtr->rosnode->subscribe(
-  //   "/ariac/arm2/gripper/state", 10, &AriacScorer::OnGripperStateReceived,
-  //   &this->dataPtr->ariacScorer);
-
   for (auto & pair : agvDeliverServiceName)
   {
     int index = pair.first;
@@ -634,8 +622,7 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
     this->ProcessSensorBlackout();
 
     // Update the score.
-    // this->dataPtr->ariacScorer.Update(elapsedTime);
-    /*
+    // TODO(sloretz) only publish this when an event that could change the score happens
     auto gameScore = this->dataPtr->ariacScorer.GetGameScore();
     if (gameScore.total() != this->dataPtr->currentGameScore.total())
     {
@@ -654,7 +641,7 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
       this->dataPtr->timeSpentOnCurrentOrder = this->dataPtr->ordersInProgress.top().timeTaken;
 
       // Check for completed orders.
-      bool orderCompleted = this->dataPtr->ariacScorer.IsOrderComplete(orderID);
+      bool orderCompleted = gameScore.orderScores.at(orderID).isComplete();
       if (orderCompleted)
       {
         std::ostringstream logMessage;
@@ -665,7 +652,6 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
       }
       else
       {
-        ROS_ERROR_THROTTLE(1.0, "Order %s is incomplete", orderID.c_str());
         // Check if the time limit for the current order has been exceeded.
         if (this->dataPtr->timeSpentOnCurrentOrder > this->dataPtr->ordersInProgress.top().allowedTime)
         {
@@ -677,7 +663,6 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
         }
       }
     }
-    */
 
     if (this->dataPtr->ordersInProgress.empty() && this->dataPtr->ordersToAnnounce.empty())
     {
@@ -687,7 +672,6 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
   }
   else if (this->dataPtr->currentState == "end_game")
   {
-    /*
     this->dataPtr->currentGameScore = this->dataPtr->ariacScorer.GetGameScore();
     if (this->dataPtr->gameStartTime != common::Time())
     {
@@ -700,7 +684,6 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
       this->dataPtr->currentGameScore;
     ROS_INFO_STREAM(logMessage.str().c_str());
     gzdbg << logMessage.str() << std::endl;
-    */
     this->dataPtr->currentState = "done";
 
     auto v = std::getenv("ARIAC_EXIT_ON_COMPLETION");

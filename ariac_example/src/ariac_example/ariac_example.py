@@ -21,6 +21,7 @@ import rospy
 
 from osrf_gear.msg import Order
 from osrf_gear.msg import VacuumGripperState
+from osrf_gear.srv import AGVControl
 from osrf_gear.srv import ConveyorBeltControl
 from osrf_gear.srv import DroneControl
 from osrf_gear.srv import VacuumGripperControl
@@ -143,6 +144,12 @@ class MyCompetitionClass:
         rospy.loginfo("Sending command:\n" + str(msg))
         publisher.publish(msg)
 
+    def send_arm1_to_state(self, positions):
+        return self.send_arm_to_state(positions, self.arm_1_joint_trajectory_publisher)
+
+    def send_arm2_to_state(self, positions):
+        return self.send_arm_to_state(positions, self.arm_2_joint_trajectory_publisher)
+
 
 def connect_callbacks(comp_class):
     comp_state_sub = rospy.Subscriber(
@@ -156,3 +163,26 @@ def connect_callbacks(comp_class):
         "/ariac/arm1/gripper/state", VacuumGripperState, comp_class.arm_1_gripper_state_callback)
     gripper_state_sub = rospy.Subscriber(
         "/ariac/arm2/gripper/state", VacuumGripperState, comp_class.arm_1_gripper_state_callback)
+
+
+def control_agv(shipment_type, agv_num):
+    if agv_num not in (1,2):
+        raise ValueError('agv_num must be 1 or 2')
+
+    rospy.loginfo("Waiting for agv{} control to be ready...".format(agv_num))
+    name = '/ariac/agv{}'.format(agv_num)
+    rospy.wait_for_service(name)
+    rospy.loginfo("agv{} control is now ready.".format(agv_num))
+    rospy.loginfo("Requesting agv control...")
+
+    try:
+        agv_control = rospy.ServiceProxy(name, AGVControl)
+        response = agv_control(shipment_type)
+    except rospy.ServiceException as exc:
+        rospy.logerr("Failed to control the agv: %s" % exc)
+        return False
+    if not response.success:
+        rospy.logerr("Failed to control the agv: %s" % response)
+    else:
+        rospy.loginfo("agv controlled successfully")
+    return response.success
