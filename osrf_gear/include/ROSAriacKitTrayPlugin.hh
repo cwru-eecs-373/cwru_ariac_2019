@@ -33,6 +33,7 @@
 #include <gazebo/transport/transport.hh>
 #include <gazebo/util/system.hh>
 #include <osrf_gear/ARIAC.hh>
+#include <osrf_gear/DetectShipment.h>
 #include "SideContactPlugin.hh"
 
 namespace gazebo
@@ -80,6 +81,10 @@ namespace gazebo
     protected: bool HandleClearService(
       ros::ServiceEvent<std_srvs::Trigger::Request, std_srvs::Trigger::Response>& event);
 
+    /// \brief Service for geting the content of a tray
+    protected: bool HandleGetContentService(
+      ros::ServiceEvent<osrf_gear::DetectShipment::Request, osrf_gear::DetectShipment::Response> & event);
+
     /// \brief Kit which is currently on the tray
     protected: ariac::Kit currentKit;
 
@@ -95,18 +100,14 @@ namespace gazebo
     /// \brief Gazebo node for communication
     protected: transport::NodePtr gzNode;
 
-    /// \brief Publisher for the kit state
-    protected: ros::Publisher currentKitPub;
-
-    /// \brief Whether or not the Kit ROS topic is enabled
-    /// If unpermitted subscribers connect during the competition, publishing is disabled
-    protected: bool publishingEnabled;
-
     /// \brief Service that locks models to the tray
     public: ros::ServiceServer lockModelsServer;
 
     /// \brief ROS service that clears the tray
     public: ros::ServiceServer clearTrayServer;
+
+    /// \brief ROS service to get the contents of the tray
+    public: ros::ServiceServer trayContentsServer;
 
     /// \brief Parts to ignore (will be published as faulty in tray msgs)
     /// The namespace of the part (e.g. bin7) is ignored.

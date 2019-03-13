@@ -31,15 +31,14 @@ add_message_files(DIRECTORY msg
   DetectedProduct.msg
   Shipment.msg
   Product.msg
-  ShippingBox.msg
+  Shipment.msg
+  DetectedShipment.msg
   LogicalCameraImage.msg
   Model.msg
   Order.msg
   PopulationState.msg
   Proximity.msg
   StorageUnit.msg
-  ShippingBoxContents.msg
-  TrayContents.msg
   VacuumGripperState.msg
 )
 
@@ -47,6 +46,7 @@ add_service_files(DIRECTORY srv
   FILES
   AGVControl.srv
   DroneControl.srv
+  DetectShipment.srv
   ConveyorBeltControl.srv
   GetMaterialLocations.srv
   PopulationControl.srv

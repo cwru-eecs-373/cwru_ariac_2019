@@ -21,6 +21,7 @@
 #include <memory>
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/physics/PhysicsTypes.hh>
+#include <osrf_gear/AGVControl.h>
 #include <osrf_gear/GetMaterialLocations.h>
 #include <osrf_gear/SubmitTray.h>
 #include <sdf/sdf.hh>
@@ -149,6 +150,10 @@ namespace gazebo
     /// \brief Callback for when a query is made for material locations.
     public: bool HandleGetMaterialLocationsService(
       osrf_gear::GetMaterialLocations::Request & req, osrf_gear::GetMaterialLocations::Response & res);
+
+    /// \brief Callback for when a query is made for material locations.
+    public: bool HandleAGVDeliverService(
+      osrf_gear::AGVControl::Request & req, osrf_gear::AGVControl::Response & res, int agv_id);
 
     /// \brief Announce an order to participants.
     protected: void AnnounceOrder(const ariac::Order & order);

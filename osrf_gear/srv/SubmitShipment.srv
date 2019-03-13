@@ -1,4 +1,6 @@
-string shipping_box_id
+# ID used to say which tray this is
+string destination_id
+# ID used to say which order and shipment this is
 string shipment_type
 
 ---

@@ -220,7 +220,7 @@ expand_snippet('laser_profiler.sdf.template')
         <uri>model://warehouse_robot_ariac</uri>
       </include>
       <plugin name="agv_plugin" filename="libROSAGVPlugin.so">
-        <submit_tray_service_name>/ariac/submit_tray</submit_tray_service_name>
+        <agv_control_service_name>/ariac/agv@(str(agv_id))/animate</agv_control_service_name>
         <clear_tray_service_name>/ariac/kit_tray_@(str(agv_id))/clear_tray</clear_tray_service_name>
         <lock_tray_service_name>/ariac/kit_tray_@(str(agv_id))/lock_models</lock_tray_service_name>
         <index>@(str(agv_id))</index>
@@ -238,6 +238,7 @@ expand_snippet('laser_profiler.sdf.template')
           <contact_sensor_name>kit_tray_contact</contact_sensor_name>
           <clear_tray_service_name>/ariac/kit_tray_@(str(agv_id))/clear_tray</clear_tray_service_name>
           <lock_models_service_name>/ariac/kit_tray_@(str(agv_id))/lock_models</lock_models_service_name>
+          <get_content_service_name>/ariac/kit_tray_@(str(agv_id))/get_content</get_content_service_name>
           <update_rate>20</update_rate>
           <faulty_parts>
 @[for part_name, part_info in faulty_products.items()]@
@@ -338,6 +339,13 @@ expand_snippet('laser_profiler.sdf.template')
       <submit_tray_service_name>/ariac/submit_tray</submit_tray_service_name>
       <material_locations_service_name>/ariac/material_locations</material_locations_service_name>
       <orders_topic>/ariac/orders</orders_topic>
+@[for agv_id in [1,2]]@
+      <agv index="@(agv_id)">
+        <agv_control_service_name>/ariac/agv@(agv_id)/control</agv_control_service_name>
+        <agv_animate_service_name>/ariac/agv@(agv_id)/animate</agv_animate_service_name>
+        <get_content_service_name>/ariac/kit_tray_@(agv_id)/get_content</get_content_service_name>
+      </agv>
+@[end for]@
 @[for order_name, order in orders.items()]@
       <order>
         <name>@(order_name)</name>

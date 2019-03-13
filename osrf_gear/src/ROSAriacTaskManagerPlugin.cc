@@ -43,6 +43,7 @@
 #include "osrf_gear/ARIAC.hh"
 #include "osrf_gear/ROSAriacTaskManagerPlugin.hh"
 #include "osrf_gear/AriacScorer.h"
+#include "osrf_gear/DetectShipment.h"
 #include "osrf_gear/Shipment.h"
 #include "osrf_gear/Product.h"
 #include "osrf_gear/Order.h"
@@ -109,6 +110,15 @@ namespace gazebo
 
     /// \brief Service that allows a tray to be submitted for inspection.
     public: ros::ServiceServer submitTrayServiceServer;
+
+    /// \brief Map of agv id to server that handles requests to deliver shipment
+    public: std::map<int, ros::ServiceServer> agvDeliverService;
+
+    /// \brief Map of agv id to client that can get its content
+    public: std::map<int, ros::ServiceClient> agvGetContentClient;
+
+    /// \brief Map of agv id to client that can ask AGV to animate
+    public: std::map<int, ros::ServiceClient> agvAnimateClient;
 
     /// \brief Transportation node.
     public: transport::NodePtr node;
@@ -285,6 +295,35 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
   std::string getMaterialLocationsServiceName = "material_locations";
   if (_sdf->HasElement("material_locations_service_name"))
     getMaterialLocationsServiceName = _sdf->Get<std::string>("material_locations_service_name");
+
+  std::map<int, std::string> agvDeliverServiceName;
+  std::map<int, std::string> agvAnimateServiceName;
+  std::map<int, std::string> agvGetContentServiceName;
+  if (_sdf->HasElement("agv"))
+  {
+    sdf::ElementPtr agvElem = _sdf->GetElement("agv");
+    while (agvElem)
+    {
+      int index = agvElem->Get<int>("index");
+      agvDeliverServiceName[index] = "deliver";
+      agvAnimateServiceName[index] = "animate";
+      agvGetContentServiceName[index] = "get_content";
+      if (agvElem->HasElement("agv_control_service_name"))
+      {
+        agvDeliverServiceName[index] = agvElem->Get<std::string>("agv_control_service_name");
+      }
+      if (agvElem->HasElement("agv_animate_service_name"))
+      {
+        agvAnimateServiceName[index] = agvElem->Get<std::string>("agv_animate_service_name");
+      }
+      if (agvElem->HasElement("get_content_service_name"))
+      {
+        agvGetContentServiceName[index] = agvElem->Get<std::string>("get_content_service_name");
+      }
+
+      agvElem = agvElem->GetNextElement("agv");
+    }
+  }
 
 
   // Parse the orders.
@@ -502,16 +541,43 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
     this->dataPtr->node->Advertise<msgs::GzString>(populationActivateTopic);
 
   // Initialize the game scorer.
-  this->dataPtr->shippingBoxInfoSub = this->dataPtr->rosnode->subscribe(
-    "/ariac/trays", 10, &AriacScorer::OnShippingBoxInfoReceived, &this->dataPtr->ariacScorer);
+  // this->dataPtr->shippingBoxInfoSub = this->dataPtr->rosnode->subscribe(
+  //   "/ariac/trays", 10, &AriacScorer::OnShippingBoxInfoReceived, &this->dataPtr->ariacScorer);
 
-  this->dataPtr->gripper1StateSub = this->dataPtr->rosnode->subscribe(
-    "/ariac/arm1/gripper/state", 10, &AriacScorer::OnGripperStateReceived,
-    &this->dataPtr->ariacScorer);
+  // this->dataPtr->gripper1StateSub = this->dataPtr->rosnode->subscribe(
+  //   "/ariac/arm1/gripper/state", 10, &AriacScorer::OnGripperStateReceived,
+  //   &this->dataPtr->ariacScorer);
 
-  this->dataPtr->gripper2StateSub = this->dataPtr->rosnode->subscribe(
-    "/ariac/arm2/gripper/state", 10, &AriacScorer::OnGripperStateReceived,
-    &this->dataPtr->ariacScorer);
+  // this->dataPtr->gripper2StateSub = this->dataPtr->rosnode->subscribe(
+  //   "/ariac/arm2/gripper/state", 10, &AriacScorer::OnGripperStateReceived,
+  //   &this->dataPtr->ariacScorer);
+
+  for (auto & pair : agvDeliverServiceName)
+  {
+    int index = pair.first;
+    std::string serviceName = pair.second;
+    this->dataPtr->agvDeliverService[index] =
+      this->dataPtr->rosnode->advertiseService<osrf_gear::AGVControl::Request, osrf_gear::AGVControl::Response>(
+        serviceName,
+        boost::bind(&ROSAriacTaskManagerPlugin::HandleAGVDeliverService, this,
+        _1, _2, index));
+  }
+
+  for (auto & pair : agvGetContentServiceName)
+  {
+    int index = pair.first;
+    std::string serviceName = pair.second;
+    this->dataPtr->agvGetContentClient[index] =
+      this->dataPtr->rosnode->serviceClient<osrf_gear::DetectShipment>(serviceName);
+  }
+
+  for (auto & pair : agvAnimateServiceName)
+  {
+    int index = pair.first;
+    std::string serviceName = pair.second;
+    this->dataPtr->agvAnimateClient[index] =
+      this->dataPtr->rosnode->serviceClient<std_srvs::Trigger>(serviceName);
+  }
 
   this->dataPtr->serverControlPub =
     this->dataPtr->node->Advertise<msgs::ServerControl>("/gazebo/server/control");
@@ -905,6 +971,69 @@ bool ROSAriacTaskManagerPlugin::HandleGetMaterialLocationsService(
       res.storage_units.push_back(storageUnitMsg);
     }
   }
+  return true;
+}
+
+/////////////////////////////////////////////////
+bool ROSAriacTaskManagerPlugin::HandleAGVDeliverService(
+  osrf_gear::AGVControl::Request & req, osrf_gear::AGVControl::Response & res, int agv_id)
+{
+  gzdbg << "AGV control service called " << agv_id << "\n";
+
+
+  if (this->dataPtr->agvAnimateClient.end() == this->dataPtr->agvAnimateClient.find(agv_id))
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] no animate client for agv " << agv_id);
+    return false;
+  }
+  if (this->dataPtr->agvGetContentClient.end() == this->dataPtr->agvGetContentClient.find(agv_id))
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] no content client for agv " << agv_id);
+    return false;
+  }
+
+  auto & animateClient = this->dataPtr->agvAnimateClient.at(agv_id);
+  auto & getContentClient = this->dataPtr->agvGetContentClient.at(agv_id);
+
+  if (!animateClient.exists())
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] animate service does not exist for " << agv_id);
+    return false;
+  }
+  if (!getContentClient.exists())
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] content service does not exist for " << agv_id);
+    return false;
+  }
+
+  osrf_gear::DetectShipment shipment_content;
+  if (!getContentClient.call(shipment_content))
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] failed to get content" << agv_id);
+    return false;
+  }
+
+  std_srvs::Trigger animate;
+  if (!animateClient.call(animate))
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] failed to ask agv to animate" << agv_id);
+    return false;
+  }
+
+  // If AGV says it's moving, then notify scorer about shipment
+  if (animate.response.success)
+  {
+    auto currentSimTime = this->dataPtr->world->SimTime();
+    res.success = true;
+    std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
+    this->dataPtr->ariacScorer.NotifyShipmentReceived(currentSimTime, req.shipment_type, shipment_content.response.shipment);
+  }
+  else
+  {
+    res.success = false;
+    res.message = animate.response.message;
+  }
+
   return true;
 }
 
