@@ -518,7 +518,7 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
   // Service for submitting AGV trays for inspection.
   this->dataPtr->submitTrayServiceServer =
     this->dataPtr->rosnode->advertiseService(submitTrayServiceName,
-      &ROSAriacTaskManagerPlugin::HandleSubmitTrayService, this);
+      &ROSAriacTaskManagerPlugin::HandleSubmitShipmentService, this);
 
   // Service for querying material storage locations.
   if (!this->dataPtr->competitionMode)
@@ -907,15 +907,15 @@ bool ROSAriacTaskManagerPlugin::HandleEndService(
 }
 
 /////////////////////////////////////////////////
-bool ROSAriacTaskManagerPlugin::HandleSubmitTrayService(
-  ros::ServiceEvent<osrf_gear::SubmitTray::Request, osrf_gear::SubmitTray::Response> & event)
+bool ROSAriacTaskManagerPlugin::HandleSubmitShipmentService(
+  ros::ServiceEvent<osrf_gear::SubmitShipment::Request, osrf_gear::SubmitShipment::Response> & event)
 {
   std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
-  const osrf_gear::SubmitTray::Request& req = event.getRequest();
-  osrf_gear::SubmitTray::Response& res = event.getResponse();
+  const osrf_gear::SubmitShipment::Request& req = event.getRequest();
+  osrf_gear::SubmitShipment::Response& res = event.getResponse();
 
   const std::string& callerName = event.getCallerName();
-  gzdbg << "Submit tray service called by: " << callerName << std::endl;
+  gzdbg << "Submit shipment service called by: " << callerName << std::endl;
 
   if (this->dataPtr->competitionMode && callerName.compare("/gazebo") != 0)
   {
@@ -927,23 +927,87 @@ bool ROSAriacTaskManagerPlugin::HandleSubmitTrayService(
   }
 
   if (this->dataPtr->currentState != "go") {
-    std::string errStr = "Competition is not running so shipping boxes cannot be submitted.";
+    std::string errStr = "Competition is not running so shipments cannot be submitted.";
     gzerr << errStr << std::endl;
     ROS_ERROR_STREAM(errStr);
     return false;
   }
 
-  // ariac::ShippingBox shippingBox;
-  // gzdbg << "SubmitShipment request received for shipping box: " << req.shipping_box_id << std::endl;
-  // if (!this->dataPtr->ariacScorer.GetShippingBoxById(req.shipping_box_id, shippingBox))
-  // {
-  //   res.success = false;
-  //   return true;
-  // }
-  // shippingBox.currentShipment.shipmentType = req.shipment_type;
+  // Figure out which AGV is being submitted
+  int agv_id = 0;
+  std::string destination_id(req.destination_id);
+  if (destination_id.size() > 1)
+  {
+    // this is probably a tray name, reduce it to just the AGV id
+    size_t kit_tray_pos = destination_id.find("kit_tray_");
+    if (kit_tray_pos != std::string::npos)
+    {
+      size_t id_pos = kit_tray_pos + std::string("kit_tray_").size();
+      if (destination_id.size() > id_pos)
+      {
+        // throw away all but 1 character
+        destination_id = destination_id[id_pos];
+      }
+    }
+  }
+
+  if (1 == destination_id.size() && '1' == destination_id[0])
+  {
+    agv_id = 1;
+  }
+  else if (1 == destination_id.size() && '2' == destination_id[0])
+  {
+    agv_id = 2;
+  }
+
+  if (0 == agv_id)
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] Could not determing AGV from: " << req.destination_id);
+    res.success = false;
+    res.inspection_result = 0;
+    return true;
+  }
+
+  if (this->dataPtr->agvGetContentClient.end() == this->dataPtr->agvGetContentClient.find(agv_id))
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] no content client for agv " << agv_id);
+    return false;
+  }
+
+  auto & getContentClient = this->dataPtr->agvGetContentClient.at(agv_id);
+
+  if (!getContentClient.exists())
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] content service does not exist for " << agv_id);
+    return false;
+  }
+
+  osrf_gear::DetectShipment shipment_content;
+  if (!getContentClient.call(shipment_content))
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] failed to get content" << agv_id);
+    return false;
+  }
+
+  auto currentSimTime = this->dataPtr->world->SimTime();
   res.success = true;
-  // res.inspection_result = this->dataPtr->ariacScorer.SubmitShipment(shippingBox).total();
+  this->dataPtr->ariacScorer.NotifyShipmentReceived(currentSimTime, req.shipment_type, shipment_content.response.shipment);
+
+  // Figure out what the score of that shipment was
   res.inspection_result = 0;
+  this->dataPtr->currentGameScore = this->dataPtr->ariacScorer.GetGameScore();
+  for (auto & orderScorePair : this->dataPtr->currentGameScore.orderScores)
+  {
+    for (const auto & shipmentScorePair : orderScorePair.second.shipmentScores)
+    {
+      if (shipmentScorePair.first == req.shipment_type)
+      {
+        res.inspection_result = shipmentScorePair.second.total();
+        break;
+      }
+    }
+  }
+
   gzdbg << "Inspection result: " << res.inspection_result << std::endl;
   return true;
 }

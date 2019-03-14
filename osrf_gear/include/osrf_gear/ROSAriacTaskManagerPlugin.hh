@@ -23,7 +23,7 @@
 #include <gazebo/physics/PhysicsTypes.hh>
 #include <osrf_gear/AGVControl.h>
 #include <osrf_gear/GetMaterialLocations.h>
-#include <osrf_gear/SubmitTray.h>
+#include <osrf_gear/SubmitShipment.h>
 #include <sdf/sdf.hh>
 #include <std_msgs/String.h>
 #include <std_srvs/Trigger.h>
@@ -144,8 +144,8 @@ namespace gazebo
       std_srvs::Trigger::Request & req, std_srvs::Trigger::Response & res);
 
     /// \brief Callback for when a shipment is submitted for inspection.
-    public: bool HandleSubmitTrayService(
-      ros::ServiceEvent<osrf_gear::SubmitTray::Request, osrf_gear::SubmitTray::Response> & event);
+    public: bool HandleSubmitShipmentService(
+      ros::ServiceEvent<osrf_gear::SubmitShipment::Request, osrf_gear::SubmitShipment::Response> & event);
 
     /// \brief Callback for when a query is made for material locations.
     public: bool HandleGetMaterialLocationsService(
