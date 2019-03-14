@@ -26,14 +26,11 @@ class ScoringTester(ExampleNodeTester):
         time.sleep(60)
 
         # Submit the shipping box
-        self._test_submit_shipment()
+        self._test_submit_shipment(shipment_type='order_0_shipment_0', agv_num=1)
         time.sleep(5.0)
 
         # Check the score
-        self.assertTrue(
-            self.current_comp_score == expectedScore,
-            'Something went wrong in the scoring. Expected score of ' + str(expectedScore) +
-            ' but received: ' + str(self.current_comp_score))
+        self.assertEqual(self.current_comp_score, expectedScore)
 
 
 if __name__ == '__main__':

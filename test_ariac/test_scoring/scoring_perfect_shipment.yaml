@@ -1,5 +1,5 @@
 models_to_spawn:
-  # Spawn some models on shipping_box_0 on startup
+  # Spawn some models on startup
   agv1::kit_tray_1:
     models:
       part_0:
