@@ -160,6 +160,11 @@ ariac::GameScore AriacScorer::GetGameScore()
       {
         if (desired_shipment.shipment_type == shipment_info.type)
         {
+          if (shipment_info.submit_time < start_time)
+          {
+            // Maybe order was updated, this shipment was submitted too early
+            continue;
+          }
           // Found actual shipment, score it
           auto & scorer = order_score.shipmentScores[desired_shipment.shipment_type];
           scorer.isSubmitted = true;

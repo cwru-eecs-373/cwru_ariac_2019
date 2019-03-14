@@ -1010,7 +1010,7 @@ TEST(TestAriacScorer, order_fulfilled_but_arm_collision)
     score.orderScores["order_0"].total()) << score;
 }
 
-TEST(TestAriacScorer, order_update_old_shipments_ignored)
+TEST(TestAriacScorer, order_update_old_shipments_ignored_got_some_points)
 {
   AriacScorer scorer;
 
@@ -1072,6 +1072,64 @@ TEST(TestAriacScorer, order_update_old_shipments_ignored)
   EXPECT_DOUBLE_EQ(
     make_shipment_score(1, 0, ALL_PRODUCTS),
     score.total()) << score;
+}
+
+TEST(TestAriacScorer, order_update_old_shipments_ignored_got_no_points)
+{
+  AriacScorer scorer;
+
+  {
+    Order order;
+    order.order_id = "order_0";
+    order.shipments.emplace_back();
+    order.shipments.back().shipment_type = "order_0_shipment_0";
+    order.shipments.back().products.emplace_back();
+    order.shipments.back().products.back().type = "gear_part";
+    order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
+    Time start_time(123, 456);
+    scorer.NotifyOrderStarted(start_time, order);
+  }
+
+  // This would have fulfiled the original order perfectly
+  {
+    Time shipment_time(456, 0);
+    DetectedShipment shipment;
+    shipment.products.emplace_back();
+    shipment.products.back().is_faulty = false;
+    shipment.products.back().type = "gear_part";
+    shipment.products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
+    scorer.NotifyShipmentReceived(shipment_time, "order_0_shipment_0", shipment);
+  }
+  // This would update the new order perfectly, but it's too soon
+  {
+    Time shipment_time(789, 0);
+    DetectedShipment shipment;
+    shipment.products.emplace_back();
+    shipment.products.back().is_faulty = false;
+    shipment.products.back().type = "pulley_part";
+    shipment.products.back().pose = make_pose(0, 1, 0, 0, 0, 0);
+    scorer.NotifyShipmentReceived(shipment_time, "order_0_shipment_0", shipment);
+  }
+  {
+    Order order;
+    order.order_id = "order_0_update_0";
+    order.shipments.emplace_back();
+    order.shipments.back().shipment_type = "order_0_shipment_0";
+    order.shipments.back().products.emplace_back();
+    order.shipments.back().products.back().type = "pulley_part";
+    order.shipments.back().products.back().pose = make_pose(0, 1, 0, 0, 0, 0);
+    Time start_time(123456, 456);
+    scorer.NotifyOrderUpdated(start_time, "order_0", order);
+  }
+  // THis fulfils the updated order without any points
+  {
+    Time shipment_time(1234567, 0);
+    DetectedShipment shipment;
+    scorer.NotifyShipmentReceived(shipment_time, "order_0_shipment_0", shipment);
+  }
+
+  auto score = scorer.GetGameScore();
+  EXPECT_DOUBLE_EQ(0, score.total()) << score;
 }
 
 // Run all the tests that were declared with TEST()
