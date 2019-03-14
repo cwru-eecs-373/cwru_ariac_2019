@@ -153,6 +153,8 @@ ariac::GameScore AriacScorer::GetGameScore()
       order_score.shipmentScores[expected_shipment.shipment_type] = shipment_score;
     }
 
+    std::vector<std::string> claimed_shipments;
+
     // Find actual shipments that belong to this order
     for (const auto & desired_shipment : order->shipments)
     {
@@ -165,6 +167,22 @@ ariac::GameScore AriacScorer::GetGameScore()
             // Maybe order was updated, this shipment was submitted too early
             continue;
           }
+          // If the same shipment was submitted twice, only count the first one
+          bool is_claimed = false;
+          for (const auto & type : claimed_shipments)
+          {
+            if (type == desired_shipment.shipment_type)
+            {
+              is_claimed = true;
+              break;
+            }
+          }
+          if (is_claimed)
+          {
+            continue;
+          }
+          claimed_shipments.push_back(desired_shipment.shipment_type);
+
           // Found actual shipment, score it
           auto & scorer = order_score.shipmentScores[desired_shipment.shipment_type];
           scorer.isSubmitted = true;

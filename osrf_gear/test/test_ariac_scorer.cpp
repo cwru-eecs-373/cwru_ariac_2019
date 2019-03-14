@@ -1132,6 +1132,82 @@ TEST(TestAriacScorer, order_update_old_shipments_ignored_got_no_points)
   EXPECT_DOUBLE_EQ(0, score.total()) << score;
 }
 
+TEST(TestAriacScorer, order_with_one_shipment_fulfilled_perfectly_then_again_with_nothing)
+{
+  AriacScorer scorer;
+
+  Order order;
+  order.order_id = "order_0";
+  order.shipments.emplace_back();
+  order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().products.emplace_back();
+  order.shipments.back().products.back().type = "gear_part";
+  order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
+  Time start_time(123, 456);
+
+  scorer.NotifyOrderStarted(start_time, order);
+
+  // submit perfect shipment
+  {
+  Time shipment_time(789, 123);
+  DetectedShipment shipment;
+  shipment.products.emplace_back();
+  shipment.products.back().is_faulty = false;
+  shipment.products.back().type = order.shipments.back().products.back().type;
+  shipment.products.back().pose = order.shipments.back().products.back().pose;
+  scorer.NotifyShipmentReceived(shipment_time, order.shipments.back().shipment_type, shipment);
+  }
+  // Incorrectly submit same shipment again, but with no content
+  {
+  Time shipment_time(7890, 123);
+  DetectedShipment shipment;
+  scorer.NotifyShipmentReceived(shipment_time, order.shipments.back().shipment_type, shipment);
+  }
+
+  // Only the first shipment score should count
+  auto score = scorer.GetGameScore();
+  EXPECT_DOUBLE_EQ(make_shipment_score(1, 1, ALL_PRODUCTS), score.total()) << score;
+  EXPECT_TRUE(score.orderScores["order_0"].isComplete());
+}
+
+TEST(TestAriacScorer, order_with_one_shipment_fulfilled_with_nothing_then_again_perfectly)
+{
+  AriacScorer scorer;
+
+  Order order;
+  order.order_id = "order_0";
+  order.shipments.emplace_back();
+  order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().products.emplace_back();
+  order.shipments.back().products.back().type = "gear_part";
+  order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
+  Time start_time(123, 456);
+
+  scorer.NotifyOrderStarted(start_time, order);
+
+  // submit shipment with no content
+  {
+  Time shipment_time(789, 123);
+  DetectedShipment shipment;
+  scorer.NotifyShipmentReceived(shipment_time, order.shipments.back().shipment_type, shipment);
+  }
+  // incorrectly ship same shipment again, but having perfect content
+  {
+  Time shipment_time(7890, 123);
+  DetectedShipment shipment;
+  shipment.products.emplace_back();
+  shipment.products.back().is_faulty = false;
+  shipment.products.back().type = order.shipments.back().products.back().type;
+  shipment.products.back().pose = order.shipments.back().products.back().pose;
+  scorer.NotifyShipmentReceived(shipment_time, order.shipments.back().shipment_type, shipment);
+  }
+
+  // Only the first shipment score should count
+  auto score = scorer.GetGameScore();
+  EXPECT_DOUBLE_EQ(0, score.total()) << score;
+  EXPECT_TRUE(score.orderScores["order_0"].isComplete());
+}
+
 // Run all the tests that were declared with TEST()
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
