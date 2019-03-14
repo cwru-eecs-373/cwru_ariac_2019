@@ -16,31 +16,27 @@ class ScoringTester(ExampleNodeTester):
         expectedScore = float(sys.argv[1])
         rospy.loginfo('Using expected score of: ' + str(expectedScore))
         if len(sys.argv) > 2:
-            self.shipping_box_1_first = sys.argv[2] == '--shipping-box-1-first'
+            self.agv2_first = sys.argv[2] == '--agv-2-first'
         self.prepare_tester()
 
         # Starting the competition will cause products from the order to be spawned on shipping_box_0
         self._test_start_comp()
 
-        if self.shipping_box_1_first:
-            # Submit the tray on shipping_box_1
-            self._test_submit_shipment(shipping_box_index=1, shipment_id='order_1_shipment_0')
+        if self.agv2_first:
+            # Submit the tray on agv2
+            self._test_submit_shipment(shipment_type='order_0_shipment_0', agv_num=2)
             time.sleep(5.0)
-            # Submit the tray on shipping_box_0
-            self._test_submit_shipment()
+            self._test_submit_shipment(shipment_type='order_0_shipment_1', agv_num=1)
             time.sleep(5.0)
         else:
             # Submit the tray on shipping_box_0
-            self._test_submit_shipment()
+            self._test_submit_shipment(shipment_type='order_0_shipment_0', agv_num=1)
             time.sleep(5.0)
             # Submit the tray on shipping_box_1
-            self._test_submit_shipment(shipping_box_index=1, shipment_id='order_1_shipment_0')
+            self._test_submit_shipment(shipment_type='order_0_shipment_1', agv_num=2)
             time.sleep(5.0)
 
-        self.assertTrue(
-            self.current_comp_score == expectedScore,
-            'Something went wrong in the scoring. Expected score of ' + str(expectedScore) +
-            ' but received: ' + str(self.current_comp_score))
+        self.assertEqual(self.current_comp_score, expectedScore)
 
 
 if __name__ == '__main__':

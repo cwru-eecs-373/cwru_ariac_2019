@@ -86,6 +86,10 @@ class ExampleNodeTester(unittest.TestCase):
         success = ariac_example.control_agv(shipment_id, agv_num=1)
         self.assertTrue(success, 'Failed to control agv1')
 
+    def _test_submit_shipment(self, shipment_type, agv_num):
+        success = ariac_example.submit_shipment(shipment_type, agv_num)
+        self.assertTrue(success, 'failed to submit shipment')
+
     def _test_comp_end(self):
         num_received_orders = len(self.comp_class.received_orders)
         num_shipments = len(self.comp_class.received_orders[0].shipments)
