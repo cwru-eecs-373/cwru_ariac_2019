@@ -8,7 +8,7 @@
               $(find osrf_gear)/config/sample_user_config.yaml
               --state-logging=true
               --development-mode --verbose --no-gui"/>
-  <test pkg="test_ariac" type="test_scoring_after_waiting.py"
+  <test pkg="test_ariac" type="test_scoring_against_expected_score.py"
         test-name="test_scoring_after_waiting"
-        time-limit="90.0" args="15"/>
+        time-limit="90.0" args="15 wait:60 submit_agv1:order_0_shipment_0 wait:5"/>
 </launch>

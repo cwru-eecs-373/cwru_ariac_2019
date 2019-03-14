@@ -74,8 +74,6 @@ install(PROGRAMS
   test_gripper_drop_over_bins.py
   test_gripper_drop_over_box.py
   test_gripper_unthrottled.py
-  test_scoring_after_waiting.py
-  test_scoring_after_waiting.py
   test_scoring_against_expected_score.py
   test_sensor_blackout.py
   test_sensors.py

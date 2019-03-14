@@ -8,5 +8,5 @@
               --development-mode --verbose --no-gui"/>
   <test pkg="test_ariac" type="test_scoring_against_expected_score.py"
         test-name="test_scoring_faulty_parts"
-        time-limit="60.0" args="6"/>
+        time-limit="60.0" args="6 submit_agv1:order_0_shipment_0 wait:5"/>
 </launch>

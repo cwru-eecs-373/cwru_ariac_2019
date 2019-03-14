@@ -15,26 +15,31 @@ class ScoringTester(ExampleNodeTester):
     def test(self):
         expectedScore = float(sys.argv[1])
         rospy.loginfo('Using expected score of: ' + str(expectedScore))
+        commands = []
         if len(sys.argv) > 2:
-            self.agv2_first = sys.argv[2] == '--agv-2-first'
+            for arg in sys.argv[2:]:
+                if arg.startswith('--'):
+                    break
+                commands.append(arg)
+        self.assertNotEqual([], commands)
         self.prepare_tester()
 
         # Starting the competition will cause products from the order to be spawned on shipping_box_0
         self._test_start_comp()
 
-        if self.agv2_first:
-            # Submit the tray on agv2
-            self._test_submit_shipment(shipment_type='order_0_shipment_0', agv_num=2)
-            time.sleep(5.0)
-            self._test_submit_shipment(shipment_type='order_0_shipment_1', agv_num=1)
-            time.sleep(5.0)
-        else:
-            # Submit the tray on shipping_box_0
-            self._test_submit_shipment(shipment_type='order_0_shipment_0', agv_num=1)
-            time.sleep(5.0)
-            # Submit the tray on shipping_box_1
-            self._test_submit_shipment(shipment_type='order_0_shipment_1', agv_num=2)
-            time.sleep(5.0)
+        for command in commands:
+            opcode, arg = command.split(":")
+            if "wait" == opcode:
+                print('Waiting for ' + arg + ' seconds')
+                time.sleep(float(arg))
+            elif "submit_agv1" == opcode:
+                print('Submitting agv1 shipment ' + arg)
+                self._test_submit_shipment(shipment_type=arg, agv_num=1)
+            elif "submit_agv2" == opcode:
+                print('Submitting agv2 shipment ' + arg)
+                self._test_submit_shipment(shipment_type=arg, agv_num=2)
+            else:
+                raise ValueError("unknown command: " + repr(command))
 
         self.assertEqual(self.current_comp_score, expectedScore)
 
