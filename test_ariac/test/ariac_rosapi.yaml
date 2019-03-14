@@ -41,11 +41,6 @@ topics:
     num_publishers: 1
     num_subscribers: 0
 
-  - topic: /ariac/trays
-    type: osrf_gear/TrayContents
-    num_publishers: 1
-    num_subscribers: 1
-
   - topic: /ariac/population/state
     type: osrf_gear/PopulationState
     num_publishers: 1
@@ -188,6 +183,18 @@ services:
 
   - service: /ariac/submit_tray
     type: osrf_gear/SubmitTray
+
+  - service: /ariac/agv1/animate
+    type: std_srvs/Trigger
+
+  - service: /ariac/agv2/animate
+    type: std_srvs/Trigger
+
+  - service: /ariac/kit_tray_1/get_content
+    type: osrf_gear/DetectShipment
+
+  - service: /ariac/kit_tray_2/get_content
+    type: osrf_gear/DetectShipment
 
   #####################################
   # Arm

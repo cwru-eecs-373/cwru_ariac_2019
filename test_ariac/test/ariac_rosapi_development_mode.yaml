@@ -6,10 +6,6 @@ topics:
 
   #####################################
   # Competition control
-  - topic: /ariac/trays
-    type: osrf_gear/TrayContents
-    num_publishers: 1
-    num_subscribers: 1
 
   - topic: /ariac/current_score
     type: std_msgs/Float32
