@@ -71,6 +71,9 @@ namespace gazebo
     /// \brief Mapping between material types and their locations.
     public: std::map<std::string, std::vector<std::string> > materialLocations;
 
+    /// \brief Stored tray contents
+    public: std::map<std::string, osrf_gear::DetectedShipment::ConstPtr> shipmentContents;
+
     /// \brief A scorer to mange the game score.
     public: AriacScorer ariacScorer;
 
@@ -83,8 +86,8 @@ namespace gazebo
     /// \brief Publishes an order.
     public: ros::Publisher orderPub;
 
-    /// \brief ROS subscriber for the shipping box states.
-    public: ros::Subscriber shippingBoxInfoSub;
+    /// \brief Subscription for tray content
+    public: ros::Subscriber shipmentContentSubscriber;
 
     /// \brief ROS subscribers for the gripper state.
     public: ros::Subscriber gripper1StateSub;
@@ -291,6 +294,10 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
   std::string submitTrayServiceName = "submit_tray";
   if (_sdf->HasElement("submit_tray_service_name"))
     submitTrayServiceName = _sdf->Get<std::string>("submit_tray_service_name");
+
+  std::string shipmentContentTopic = "shipment_content";
+  if (_sdf->HasElement("shipment_content_topic_name"))
+    shipmentContentTopic = _sdf->Get<std::string>("shipment_content_topic_name");
 
   std::string getMaterialLocationsServiceName = "material_locations";
   if (_sdf->HasElement("material_locations_service_name"))
@@ -528,6 +535,11 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
         &ROSAriacTaskManagerPlugin::HandleGetMaterialLocationsService, this);
   }
 
+  // Subscriber for tray content
+  this->dataPtr->shipmentContentSubscriber =
+    this->dataPtr->rosnode->subscribe(shipmentContentTopic, 1000,
+      &ROSAriacTaskManagerPlugin::OnShipmentContent, this);
+
   // Publisher for the conveyor enable topic
   this->dataPtr->conveyorEnablePub =
     this->dataPtr->node->Advertise<msgs::GzString>(conveyorEnableTopic);
@@ -761,26 +773,12 @@ void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce(gazebo::common::Time sim
     // This is used to trigger the announcment of the next order at convenient or inconvenient times
     int max_num_wanted_products = 0;
     int max_num_unwanted_products = 0;
-    for (auto & cpair: this->dataPtr->agvGetContentClient)
+    for (auto & cpair: this->dataPtr->shipmentContents)
     {
       std::vector<std::string> productsInNextOrder_copy(productsInNextOrder);
       int num_wanted_products = 0;
       int num_unwanted_products = 0;
-      auto & client = cpair.second;
-      if (!client.exists())
-      {
-        // no point if we can't count all the products
-        break;
-      }
-      // Ask tray what it contains
-      osrf_gear::DetectShipment srv;
-      if (!client.call(srv))
-      {
-        ROS_ERROR_STREAM("[ARIAC TaskManager] Failed to get content from :" << cpair.first);
-        break;
-      }
-
-      for (const auto & product : srv.response.shipment.products)
+      for (const auto & product : cpair.second->products)
       {
         // Don't count faulty products, because they have to be removed anyway.
         if (!product.is_faulty)
@@ -1155,4 +1153,12 @@ void ROSAriacTaskManagerPlugin::StopCurrentOrder()
     gzdbg << "Stopping order: " << orderID << std::endl;
     this->dataPtr->ordersInProgress.pop();
   }
+}
+
+/////////////////////////////////////////////////
+void ROSAriacTaskManagerPlugin::OnShipmentContent(osrf_gear::DetectedShipment::ConstPtr shipment)
+{
+  // store the shipment content to be used for deciding when to interrupt orders
+  std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
+  this->dataPtr->shipmentContents[shipment->destination_id] = shipment;
 }

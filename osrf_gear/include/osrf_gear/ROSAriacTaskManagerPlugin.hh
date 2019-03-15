@@ -22,6 +22,7 @@
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/physics/PhysicsTypes.hh>
 #include <osrf_gear/AGVControl.h>
+#include <osrf_gear/DetectedShipment.h>
 #include <osrf_gear/GetMaterialLocations.h>
 #include <osrf_gear/SubmitShipment.h>
 #include <sdf/sdf.hh>
@@ -154,6 +155,9 @@ namespace gazebo
     /// \brief Callback for when a query is made for material locations.
     public: bool HandleAGVDeliverService(
       osrf_gear::AGVControl::Request & req, osrf_gear::AGVControl::Response & res, int agv_id);
+
+    /// \brief Callback when a tray publishes it's content
+    public: void OnShipmentContent(osrf_gear::DetectedShipment::ConstPtr shipment);
 
     /// \brief Announce an order to participants.
     protected: void AnnounceOrder(const ariac::Order & order);

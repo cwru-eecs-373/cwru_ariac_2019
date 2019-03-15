@@ -78,6 +78,10 @@ void KitTrayPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   this->rosNode = new ros::NodeHandle("");
 
+  this->currentKitPub = this->rosNode->advertise<osrf_gear::DetectedShipment>(
+    "/ariac/trays", 1000, boost::bind(&KitTrayPlugin::OnSubscriberConnect, this, _1));
+  this->publishingEnabled = true;
+
   // ROS service for clearing the tray
   std::string clearServiceName = "clear";
   if (_sdf->HasElement("clear_tray_service_name"))
@@ -126,6 +130,10 @@ void KitTrayPlugin::OnUpdate(const common::UpdateInfo &/*_info*/)
       << this->contactingModels.size());
   }
   this->ProcessContactingModels();
+  if (this->publishingEnabled)
+  {
+    this->PublishKitMsg();
+  }
 }
 
 /////////////////////////////////////////////////
@@ -164,6 +172,50 @@ void KitTrayPlugin::ProcessContactingModels()
       this->currentKit.objects.push_back(object);
     }
   }
+}
+
+/////////////////////////////////////////////////
+void KitTrayPlugin::OnSubscriberConnect(const ros::SingleSubscriberPublisher& pub)
+{
+  auto subscriberName = pub.getSubscriberName();
+  gzwarn << this->trayID << ": New subscription from node: " << subscriberName << std::endl;
+
+  // During the competition, this environment variable will be set.
+  auto compRunning = std::getenv("ARIAC_COMPETITION");
+  if (compRunning && subscriberName.compare("/gazebo") != 0)
+  {
+    std::string errStr = "Competition is running so subscribing to this topic is not permitted.";
+    gzerr << errStr << std::endl;
+    ROS_ERROR_STREAM(errStr);
+    // Disable publishing of kit messages.
+    // This will break the scoring but ensure competitors can't cheat.
+    this->publishingEnabled = false;
+  }
+}
+
+/////////////////////////////////////////////////
+void KitTrayPlugin::PublishKitMsg()
+{
+  // Publish current kit
+  osrf_gear::DetectedShipment kitTrayMsg;
+  kitTrayMsg.destination_id = this->trayID;
+  for (const auto &obj : this->currentKit.objects)
+  {
+    osrf_gear::DetectedProduct msgObj;
+    msgObj.type = obj.type;
+    msgObj.is_faulty = obj.isFaulty;
+    msgObj.pose.position.x = obj.pose.Pos().X();
+    msgObj.pose.position.y = obj.pose.Pos().Y();
+    msgObj.pose.position.z = obj.pose.Pos().Z();
+    msgObj.pose.orientation.x = obj.pose.Rot().X();
+    msgObj.pose.orientation.y = obj.pose.Rot().Y();
+    msgObj.pose.orientation.z = obj.pose.Rot().Z();
+    msgObj.pose.orientation.w = obj.pose.Rot().W();
+
+    // Add the object to the kit.
+    kitTrayMsg.products.push_back(msgObj);
+  }
+  this->currentKitPub.publish(kitTrayMsg);
 }
 
 /////////////////////////////////////////////////

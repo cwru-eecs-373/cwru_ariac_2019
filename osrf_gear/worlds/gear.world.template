@@ -338,6 +338,7 @@ expand_snippet('laser_profiler.sdf.template')
       <conveyor_control_topic>/ariac/conveyor/control</conveyor_control_topic>
       <submit_tray_service_name>/ariac/submit_shipment</submit_tray_service_name>
       <material_locations_service_name>/ariac/material_locations</material_locations_service_name>
+      <shipment_content_topic_name>/ariac/trays</shipment_content_topic_name>
       <orders_topic>/ariac/orders</orders_topic>
 @[for agv_id in [1,2]]@
       <agv index="@(agv_id)">

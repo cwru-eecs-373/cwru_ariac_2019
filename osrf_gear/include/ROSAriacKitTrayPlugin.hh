@@ -33,6 +33,7 @@
 #include <gazebo/transport/transport.hh>
 #include <gazebo/util/system.hh>
 #include <osrf_gear/ARIAC.hh>
+#include <osrf_gear/DetectedShipment.h>
 #include <osrf_gear/DetectShipment.h>
 #include "SideContactPlugin.hh"
 
@@ -99,6 +100,13 @@ namespace gazebo
 
     /// \brief Gazebo node for communication
     protected: transport::NodePtr gzNode;
+
+    /// \brief Publisher for the kit state
+    protected: ros::Publisher currentKitPub;
+
+    /// \brief Whether or not the Kit ROS topic is enabled
+    /// If unpermitted subscribers connect during the competition, publishing is disabled
+    protected: bool publishingEnabled;
 
     /// \brief Service that locks models to the tray
     public: ros::ServiceServer lockModelsServer;
