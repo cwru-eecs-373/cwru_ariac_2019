@@ -742,8 +742,6 @@ void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce(gazebo::common::Time sim
   // Announce next order if there is no active order and we are waiting to interrupt
   announceNextOrder |= noActiveOrder && (interruptOnWantedProducts || interruptOnUnwantedProducts);
 
-  int maxNumUnwantedProducts = 0;
-  int maxNumWantedProducts = 0;
   // Check if it's time to interrupt (skip if we're already interrupting anyway)
   if (!announceNextOrder && (interruptOnWantedProducts || interruptOnUnwantedProducts))
   {
@@ -759,43 +757,59 @@ void ROSAriacTaskManagerPlugin::ProcessOrdersToAnnounce(gazebo::common::Time sim
       }
     }
 
-    // Check the shipping boxes for products from the pending order
-    /*
-    std::vector<int> numUnwantedProductsInShippingBoxes;
-    std::vector<int> numWantedProductsInShippingBoxes;
-    for (const auto & shippingBox : this->dataPtr->ariacScorer.GetShippingBoxes())
+    // Check whether the trays have products for the next order or not
+    // This is used to trigger the announcment of the next order at convenient or inconvenient times
+    int max_num_wanted_products = 0;
+    int max_num_unwanted_products = 0;
+    for (auto & cpair: this->dataPtr->agvGetContentClient)
     {
-      int numUnwantedProductsInShippingBox = 0;
-      int numWantedProductsInShippingBox = 0;
       std::vector<std::string> productsInNextOrder_copy(productsInNextOrder);
-      for (const auto product : shippingBox.currentShipment.products)
+      int num_wanted_products = 0;
+      int num_unwanted_products = 0;
+      auto & client = cpair.second;
+      if (!client.exists())
+      {
+        // no point if we can't count all the products
+        break;
+      }
+      // Ask tray what it contains
+      osrf_gear::DetectShipment srv;
+      if (!client.call(srv))
+      {
+        ROS_ERROR_STREAM("[ARIAC TaskManager] Failed to get content from :" << cpair.first);
+        break;
+      }
+
+      for (const auto & product : srv.response.shipment.products)
       {
         // Don't count faulty products, because they have to be removed anyway.
-        if (product.isFaulty)
+        if (!product.is_faulty)
         {
-          continue;
-        }
-        auto it = std::find(productsInNextOrder_copy.begin(), productsInNextOrder_copy.end(), product.type);
-        if (it == productsInNextOrder_copy.end())
-        {
-          numUnwantedProductsInShippingBox += 1;
-        }
-        else
-        {
-          numWantedProductsInShippingBox += 1;
-          productsInNextOrder_copy.erase(it);
+          auto it = std::find(productsInNextOrder_copy.begin(), productsInNextOrder_copy.end(), product.type);
+          if (it == productsInNextOrder_copy.end())
+          {
+            ++num_unwanted_products;
+          }
+          else
+          {
+            ++num_wanted_products;
+            productsInNextOrder_copy.erase(it);
+          }
         }
       }
-      numUnwantedProductsInShippingBoxes.push_back(numUnwantedProductsInShippingBox);
-      numWantedProductsInShippingBoxes.push_back(numWantedProductsInShippingBox);
+      if (num_wanted_products > max_num_wanted_products)
+      {
+        max_num_wanted_products = num_wanted_products;
+      }
+      if (num_unwanted_products > max_num_unwanted_products)
+      {
+        max_num_unwanted_products = num_unwanted_products;
+      }
     }
-    maxNumUnwantedProducts = *std::max_element(numUnwantedProductsInShippingBoxes.begin(), numUnwantedProductsInShippingBoxes.end());
-    maxNumWantedProducts = *std::max_element(numWantedProductsInShippingBoxes.begin(), numWantedProductsInShippingBoxes.end());
 
-    // Announce next order if the appropriate number of wanted/unwanted products are detected
-    announceNextOrder |= interruptOnWantedProducts && (maxNumWantedProducts >= nextOrder.interruptOnWantedProducts);
-    announceNextOrder |= interruptOnUnwantedProducts && (maxNumUnwantedProducts >= nextOrder.interruptOnUnwantedProducts);
-    */
+    // Announce next order if a tray has more than enough wanted or unwanted products
+    announceNextOrder |= interruptOnWantedProducts && (max_num_wanted_products >= nextOrder.interruptOnWantedProducts);
+    announceNextOrder |= interruptOnUnwantedProducts && (max_num_unwanted_products >= nextOrder.interruptOnUnwantedProducts);
   }
 
   if (announceNextOrder)

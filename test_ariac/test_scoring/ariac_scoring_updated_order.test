@@ -10,5 +10,5 @@
               --development-mode --verbose --no-gui"/>
   <test pkg="test_ariac" type="test_scoring_against_expected_score.py"
         test-name="test_scoring_updated_order"
-        time-limit="60.0" args="13 submit_agv1:order_0_shipment_0 wait:5"/> <!-- 5 presence + 3 pose + 5 bonus -->
+        time-limit="60.0" args="13 wait:5 submit_agv1:order_0_shipment_0 wait:5"/> <!-- 5 presence + 3 pose + 5 bonus -->
 </launch>
