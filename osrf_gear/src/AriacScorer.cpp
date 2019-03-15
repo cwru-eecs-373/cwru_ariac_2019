@@ -218,8 +218,14 @@ ariac::ShipmentScore AriacScorer::GetShipmentScore(
   scorer.isSubmitted = true;
   scorer.submit_time = submit_time;
 
-  // Separate faulty and non-faulty products
   bool has_faulty_product = false;
+  bool is_missing_products = false;
+  bool has_unwanted_product = false;
+  scorer.productPresence = 0;
+  scorer.allProductsBonus = 0;
+  scorer.productPose = 0;
+
+  // Separate faulty and non-faulty products
   std::vector<osrf_gear::DetectedProduct> non_faulty_products;
   for (const auto & actual_product : actual_shipment.products)
   {
@@ -232,113 +238,147 @@ ariac::ShipmentScore AriacScorer::GetShipmentScore(
       non_faulty_products.push_back(actual_product);
     }
   }
-
-  // Copy desired to ensure only one is matched with an actual product
-  std::vector<osrf_gear::Product> unclaimed_desired_products(desired_shipment.products);
-
-  bool has_unwanted_product = false;
   // Match products with desired products
-  std::vector<std::pair<osrf_gear::Product, osrf_gear::DetectedProduct>> matched_products;
-  for (const auto & actual_product : non_faulty_products)
-  {
-    auto best_match = unclaimed_desired_products.end();
-    double closest_distance = std::numeric_limits<double>::max();
-    for (auto desired_it = unclaimed_desired_products.begin(); desired_it != unclaimed_desired_products.end(); ++desired_it)
-    {
-      // Only match if they have the same type
-      if (desired_it->type != actual_product.type)
-      {
-        continue;
-      }
-      ignition::math::Vector3d posnDiff(
-        desired_it->pose.position.x - actual_product.pose.position.x,
-        desired_it->pose.position.y - actual_product.pose.position.y,
-        0);
-      double distance = posnDiff.Length();
+  // must check all permutations to make sure the product pose is correct
+  //  for each type of product
+  //    if size(desired_products_with_type) != size(actual_products_with_type)
+  //      ineligeble for all products bonus
+  //    contributing_presence_score = min(desired_products.size(), actual_products.size())
+  //    contributing_pose_score = 0
+  //    for each permutation of actual proudcts and desired products
+  //      score product pose and product presense
+  //      if permutation_pose_score > contributing_pose_score:
+  //        contibuting_pose_score = permutation_pose_score
+  //    scorer.productPose += contributing_pose_score
+  //    scorer.productPresense += contributing_presence_score
+  //  if eligible for all products bonus:
+  //    scorer.allProductsBonus = scorer.productPresense
 
-      if (distance < closest_distance)
-      {
-        best_match = desired_it;
-        closest_distance = distance;
-      }
-    }
-    if (best_match != unclaimed_desired_products.end())
+
+  // Map of product type to indexes in desired products (first) and indexes in non faulty actual products (second)
+  std::map<std::string, std::pair<std::vector<size_t>, std::vector<size_t>>> product_type_map;
+  for (size_t d = 0; d < desired_shipment.products.size(); ++d)
+  {
+    const auto & desired_product = desired_shipment.products[d];
+    auto & mapping = product_type_map[desired_product.type];
+    mapping.first.push_back(d);
+  }
+  for (size_t a = 0; a < non_faulty_products.size(); ++a)
+  {
+    const auto & actual_product = non_faulty_products[a];
+    if (0u == product_type_map.count(actual_product.type))
     {
-      // Erase desired product once claimed so it's not matched again
-      matched_products.push_back(std::make_pair(*best_match, actual_product));
-      unclaimed_desired_products.erase(best_match);
+      // since desired products were put into the type map first, this product must be unwanted
+      has_unwanted_product = true;
+      continue;
     }
-    else
+    auto & mapping = product_type_map.at(actual_product.type);
+    mapping.second.push_back(a);
+  }
+
+  for (const auto & type_pair : product_type_map)
+  {
+    const std::vector<size_t> & desired_indexes = type_pair.second.first;
+    const std::vector<size_t> & actual_indexes = type_pair.second.second;
+    if (desired_indexes.size() > actual_indexes.size())
+    {
+      is_missing_products = true;
+    }
+    else if (desired_indexes.size() < actual_indexes.size())
     {
       has_unwanted_product = true;
     }
-  }
 
-  // Figure out the completion score
-  // One point for each correct product in the shipment
-  scorer.productPresence = matched_products.size();
-  // Bonus points if all desired products are present and no undesired are present
-  if (matched_products.size() == desired_shipment.products.size())
-  {
-    // All desired products were present
-    scorer.isComplete = true;
-
-    // give a bonus if no additional products were present
-    if (matched_products.size() == actual_shipment.products.size()
-    && !has_unwanted_product && !has_faulty_product)
+      // no point in trying to score this type if there are none delivered
+    if (actual_indexes.empty())
     {
-      scorer.allProductsBonus = matched_products.size();
-    }
-  }
-  scorer.productPose = 0.0;
-  // Add points for each product in the correct pose
-  const double translation_target = 0.03;  // 3 cm
-  const double orientation_target = 0.1;  // 0.1 rad
-  for (auto & ppair : matched_products)
-  {
-    // get translation distance
-    ignition::math::Vector3d posnDiff(
-      ppair.first.pose.position.x - ppair.second.pose.position.x,
-      ppair.first.pose.position.y - ppair.second.pose.position.y,
-      0);
-    const double distance = posnDiff.Length();
-    if (distance > translation_target)
-    {
-      // Skipping product because translation error is too big
       continue;
     }
 
-    ignition::math::Quaterniond orderOrientation(
-      ppair.first.pose.orientation.w,
-      ppair.first.pose.orientation.x,
-      ppair.first.pose.orientation.y,
-      ppair.first.pose.orientation.z);
-    ignition::math::Quaterniond objOrientation(
-      ppair.second.pose.orientation.w,
-      ppair.second.pose.orientation.x,
-      ppair.second.pose.orientation.y,
-      ppair.second.pose.orientation.z);
+    scorer.productPresence += std::min(desired_indexes.size(), actual_indexes.size());
 
-    // Filter products that aren't in the appropriate orientation (loosely).
-    // If the quaternions represent the same orientation, q1 = +-q2 => q1.dot(q2) = +-1
-    const double orientationDiff = objOrientation.Dot(orderOrientation);
-    // TODO: this value can probably be derived using relationships between
-    // euler angles and quaternions.
-    const double quaternionDiffThresh = 0.05;
-    if (std::abs(orientationDiff) < (1.0 - quaternionDiffThresh))
+    double contributing_pose_score = 0;
+    size_t num_indices = std::max(desired_indexes.size(), actual_indexes.size());
+    std::vector<size_t> permutation(num_indices);
+    for (size_t i = 0; i < num_indices; ++i)
     {
-      // Skipping product because it is not in the correct orientation (roughly)
-      continue;
+      permutation[i] = i;
     }
+    // Now iterate through all permutations of actual matched with desired to find the highest pose score
+    do
+    {
+      double permutation_pose_score = 0;
+      for (size_t d = 0; d < desired_indexes.size(); ++d)
+      {
+        const size_t actual_index_index = permutation[d];
+        if (actual_index_index >= actual_indexes.size())
+        {
+          // There were fewer actual products than the order called for
+          continue;
+        }
+        const auto & desired_product = desired_shipment.products[desired_indexes[d]];
+        const auto & actual_product = non_faulty_products[actual_indexes[actual_index_index]];
+        // Add points for each product in the correct pose
+        const double translation_target = 0.03;  // 3 cm
+        const double orientation_target = 0.1;  // 0.1 rad
+        // get translation distance
+        ignition::math::Vector3d posnDiff(
+          desired_product.pose.position.x - actual_product.pose.position.x,
+          desired_product.pose.position.y - actual_product.pose.position.y,
+          0);
+        const double distance = posnDiff.Length();
+        if (distance > translation_target)
+        {
+          // Skipping product because translation error is too big
+          continue;
+        }
 
-    // Filter the yaw based on a threshold set in radians (more user-friendly).
-    // Account for wrapping in angles. E.g. -pi compared with pi should "pass".
-    double angleDiff = objOrientation.Yaw() - orderOrientation.Yaw();
-    if ( (std::abs(angleDiff) < orientation_target)
-      || (std::abs(std::abs(angleDiff) - 2 * M_PI) <= orientation_target))
-    {
-       scorer.productPose += 1.0;
-    }
+        ignition::math::Quaterniond orderOrientation(
+          desired_product.pose.orientation.w,
+          desired_product.pose.orientation.x,
+          desired_product.pose.orientation.y,
+          desired_product.pose.orientation.z);
+        ignition::math::Quaterniond objOrientation(
+          actual_product.pose.orientation.w,
+          actual_product.pose.orientation.x,
+          actual_product.pose.orientation.y,
+          actual_product.pose.orientation.z);
+
+        // Filter products that aren't in the appropriate orientation (loosely).
+        // If the quaternions represent the same orientation, q1 = +-q2 => q1.dot(q2) = +-1
+        const double orientationDiff = objOrientation.Dot(orderOrientation);
+        // TODO: this value can probably be derived using relationships between
+        // euler angles and quaternions.
+        const double quaternionDiffThresh = 0.05;
+        if (std::abs(orientationDiff) < (1.0 - quaternionDiffThresh))
+        {
+          // Skipping product because it is not in the correct orientation (roughly)
+          continue;
+        }
+
+        // Filter the yaw based on a threshold set in radians (more user-friendly).
+        // Account for wrapping in angles. E.g. -pi compared with pi should "pass".
+        double angleDiff = objOrientation.Yaw() - orderOrientation.Yaw();
+        if ( (std::abs(angleDiff) < orientation_target)
+          || (std::abs(std::abs(angleDiff) - 2 * M_PI) <= orientation_target))
+        {
+           permutation_pose_score += 1.0;
+        }
+      }
+      if (permutation_pose_score > contributing_pose_score)
+      {
+        contributing_pose_score = permutation_pose_score;
+      }
+    } while (std::next_permutation(permutation.begin(), permutation.end()));
+
+    // Add the pose score contributed by the highest scoring permutation
+    scorer.productPose += contributing_pose_score;
   }
+
+  if (!has_faulty_product && !has_unwanted_product && !is_missing_products)
+  {
+    scorer.allProductsBonus = scorer.productPresence;
+  }
+
   return scorer;
 }

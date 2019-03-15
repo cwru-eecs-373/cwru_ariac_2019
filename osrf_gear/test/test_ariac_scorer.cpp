@@ -15,6 +15,8 @@
  *
 */
 
+#include <algorithm>
+
 #include <gtest/gtest.h>
 
 #include <geometry_msgs/Pose.h>
@@ -798,7 +800,7 @@ TEST(TestAriacScorer, order_with_many_shipments_mixed_success)
     actual_shipment.products.emplace_back();
     actual_shipment.products.back().is_faulty = false;
     actual_shipment.products.back().type = "pulley_part";
-    actual_shipment.products.back().pose = make_pose(2, 0, 1.05, 0, 0, 0);
+    actual_shipment.products.back().pose = make_pose(2.05, 0, 1, 0, 0, 0);
     actual_shipment.products.emplace_back();
     actual_shipment.products.back().is_faulty = true;
     actual_shipment.products.back().type = "gear_part";
@@ -1206,6 +1208,103 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_with_nothing_then_again_
   auto score = scorer.GetGameScore();
   EXPECT_DOUBLE_EQ(0, score.total()) << score;
   EXPECT_TRUE(score.orderScores["order_0"].isComplete());
+}
+
+std::ostream &operator<<(std::ostream &_out, const std::vector<size_t> &_obj)
+{
+  _out << "{";
+  bool is_first = true;
+  for (size_t e : _obj)
+  {
+    if (is_first)
+    {
+      is_first = false;
+    }
+    else
+    {
+      _out << ", ";
+    }
+    _out << e;
+  }
+  _out << "}";
+  return _out;
+}
+
+TEST(TestAriacScorer, order_with_5_parts_permutated)
+{
+  // Modeled after ariac_scoring_updated_order.test, without the update
+  Order order;
+  order.order_id = "order_0";
+  order.shipments.emplace_back();
+  order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().products.emplace_back();
+  order.shipments.back().products.back().type = "piston_rod_part";
+  order.shipments.back().products.back().pose = make_pose(0.1, -0.2, 0, 0, 0, 0);
+  order.shipments.back().products.emplace_back();
+  order.shipments.back().products.back().type = "gear_part";
+  order.shipments.back().products.back().pose = make_pose(-0.1, -0.2, 0, 0, 0, 0);
+  order.shipments.back().products.emplace_back();
+  order.shipments.back().products.back().type = "piston_rod_part";
+  order.shipments.back().products.back().pose = make_pose(0.15, 0.15, 0, 0, 0, 0);
+  order.shipments.back().products.emplace_back();
+  order.shipments.back().products.back().type = "gear_part";
+  order.shipments.back().products.back().pose = make_pose(-0.15, 0.15, 0, 0, 0, 0);
+  order.shipments.back().products.emplace_back();
+  order.shipments.back().products.back().type = "gear_part";
+  order.shipments.back().products.back().pose = make_pose(0, 0.15, 0, 0, 0, 0);
+  Time start_time(123, 456);
+
+  DetectedShipment base_shipment;
+  base_shipment.products.emplace_back();
+  base_shipment.products.back().is_faulty = false;
+  base_shipment.products.back().type = "piston_rod_part";
+  base_shipment.products.back().pose = make_pose(
+    0.10000017526, -0.19999958198, 0.00435986090436,
+    -0.0000713, 0.0027489, 0);
+  base_shipment.products.emplace_back();
+  base_shipment.products.back().is_faulty = false;
+  base_shipment.products.back().type = "piston_rod_part";
+  base_shipment.products.back().pose = make_pose(
+    -0.0999998347742, -0.200000116097, 0.00438380424118,
+    -0.0001645, 0.0008087, 0);
+  base_shipment.products.emplace_back();
+  base_shipment.products.back().is_faulty = false;
+  base_shipment.products.back().type = "gear_part";
+  base_shipment.products.back().pose = make_pose(
+    0.150000095384, 0.150000596946, 0.00437033950751,
+    0.0000845, 0.0002234, 0);
+  base_shipment.products.emplace_back();
+  base_shipment.products.back().is_faulty = false;
+  base_shipment.products.back().type = "gear_part";
+  base_shipment.products.back().pose = make_pose(
+    -0.149999494027, 0.149999979668, 0.00434921469508,
+    0.0003539, -0.0004118, 1e-7);
+  base_shipment.products.emplace_back();
+  base_shipment.products.back().is_faulty = false;
+  base_shipment.products.back().type = "gear_part";
+  base_shipment.products.back().pose = make_pose(
+    -2.47204166137e-07, 0.15000077682, 0.00433509279306,
+    0, 0.00075, -1e-7);
+
+  // For all possible detected part orderings, the score should always be the same
+  std::vector<size_t> permutation{0, 1, 2, 3, 4};
+  do
+  {
+    AriacScorer scorer;
+    scorer.NotifyOrderStarted(start_time, order);
+
+    Time shipment_time(789, 123);
+    DetectedShipment shipment;
+    shipment.products.resize(base_shipment.products.size());
+    for (size_t i = 0; i < permutation.size(); ++i)
+    {
+      shipment.products.at(i) = base_shipment.products.at(permutation[i]);
+    }
+    scorer.NotifyShipmentReceived(shipment_time, order.shipments.back().shipment_type, shipment);
+
+    auto score = scorer.GetGameScore();
+    EXPECT_DOUBLE_EQ(make_shipment_score(5, 3, ALL_PRODUCTS), score.total()) << score << permutation;
+  } while (std::next_permutation(permutation.begin(), permutation.end()));
 }
 
 // Run all the tests that were declared with TEST()
