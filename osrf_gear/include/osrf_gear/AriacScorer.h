@@ -92,6 +92,13 @@ class AriacScorer
   /// \return The score for the game.
   public: ariac::GameScore GetGameScore();
 
+  /// \brief Score a single shipment
+  /// \return The score for the game.
+  public: ariac::ShipmentScore GetShipmentScore(
+    gazebo::common::Time submit_time,
+    const osrf_gear::Shipment & desired,
+    const osrf_gear::DetectedShipment & actual);
+
   /// \brief Mutex for protecting this class
   protected: mutable boost::mutex mutex;
 
