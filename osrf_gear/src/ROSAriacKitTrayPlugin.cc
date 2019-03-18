@@ -110,6 +110,9 @@ void KitTrayPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     lockModelsServiceName = _sdf->Get<std::string>("lock_models_service_name");
   this->lockModelsSub = this->gzNode->Subscribe(
     lockModelsServiceName, &KitTrayPlugin::HandleLockModelsRequest, this);
+
+  // cache tray pose
+  this->tray_pose = this->model->WorldPose();
 }
 
 /////////////////////////////////////////////////
@@ -138,15 +141,7 @@ void KitTrayPlugin::OnUpdate(const common::UpdateInfo & _info)
   {
     this->PublishKitMsg();
   }
-
-  // only publish transform once
-  // TODO(sloretz) why does tray start falling when AGV animates? Dynamic tf when that's fixed
-  static bool have_published_tf = false;
-  if (!have_published_tf)
-  {
-    this->PublishTFTransform(_info.simTime);
-    have_published_tf = true;
-  }
+  this->PublishTFTransform(_info.simTime);
 }
 
 /////////////////////////////////////////////////
@@ -366,7 +361,7 @@ bool KitTrayPlugin::HandleGetContentService(
 
 void KitTrayPlugin::PublishTFTransform(const common::Time sim_time)
 {
-  ignition::math::Pose3d objectPose = this->model->WorldPose();
+  ignition::math::Pose3d objectPose = this->tray_pose;
   geometry_msgs::TransformStamped tfStamped;
   tfStamped.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
   tfStamped.header.frame_id = "world";

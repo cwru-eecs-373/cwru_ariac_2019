@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+import math
 import sys
 import time
 
@@ -23,28 +24,29 @@ class TfTester(ExampleNodeTester):
 
         self.prepare_tf()
 
-        self._test_shipping_box_pose()
+        self._test_tray_pose()
         self._test_logical_camera_products()
         self._test_faulty_products()
 
     def prepare_tf(self):
-        self.camera_above_box0 = 'logical_camera_above_box0'
+        self.camera_frame = 'logical_camera_above_tray_1'
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
 
-    def _test_shipping_box_pose(self):
+    def _test_tray_pose(self):
         self._test_pose(
-            [0.56, 0.9, 0.58],
-            tf.transformations.quaternion_from_euler(0, 0, 0),
-            self.camera_above_box0 + '_shipping_box_0_frame'
+            [0.0, 6.3, 0.0],
+            tf.transformations.quaternion_from_euler(0, 0, math.pi),
+            'kit_tray_1',
+            'kit_tray_2',
         )
 
     def _test_logical_camera_products(self):
         self._test_pose(
             [0.1, -0.2, 0.0],
             tf.transformations.quaternion_from_euler(0, 0, 0),
-            self.camera_above_box0 + '_piston_rod_part_1_frame',
-            self.camera_above_box0 + '_shipping_box_0_frame'
+            self.camera_frame + '_piston_rod_part_1_frame',
+            'kit_tray_1'
         )
 
     def _test_faulty_products(self):
@@ -53,7 +55,7 @@ class TfTester(ExampleNodeTester):
         self._test_pose(
             [0.1, -0.2, 0.0], tf.transformations.quaternion_from_euler(0, 0, 0),
             quality_control_sensor + '_model_1_frame',
-            self.camera_above_box0 + '_shipping_box_0_frame'
+            'kit_tray_1'
         )
 
         # The model type should not be used in the name anymore (now anonymized).
@@ -61,7 +63,7 @@ class TfTester(ExampleNodeTester):
             self._test_pose(
                 [0.1, -0.2, 0.0], tf.transformations.quaternion_from_euler(0, 0, 0),
                 quality_control_sensor + '_piston_rod_part_1_frame',
-                self.camera_above_box0 + '_shipping_box_0_frame'
+                'kit_tray_1'
             )
 
         # This product is not faulty and should not be found by TF.
@@ -69,7 +71,7 @@ class TfTester(ExampleNodeTester):
             self._test_pose(
                 [0.1, -0.2, 0.0], tf.transformations.quaternion_from_euler(0, 0, 0),
                 quality_control_sensor + '_model_3_frame',
-                self.camera_above_box0 + '_shipping_box_0_frame'
+                'kit_tray_1'
             )
 
     def _test_pose(self, position, orientation, frame_id, parent_frame_id='world'):
@@ -110,30 +112,14 @@ class TfTester(ExampleNodeTester):
 
         # Check that the transformed pose is as expected.
         tol = 0.05
-        self.assertTrue(
-            world_pose.header.frame_id == expected_pose.header.frame_id,
-            'transform frame_id incorrect')
-        self.assertTrue(
-            abs(world_pose.pose.position.x - expected_pose.pose.position.x) < tol,
-            'x position incorrect')
-        self.assertTrue(
-            abs(world_pose.pose.position.y - expected_pose.pose.position.y) < tol,
-            'y position incorrect')
-        self.assertTrue(
-            abs(world_pose.pose.position.z - expected_pose.pose.position.z) < tol,
-            'z position incorrect')
-        self.assertTrue(
-            abs(world_pose.pose.orientation.x - expected_pose.pose.orientation.x) < tol,
-            'x orientation incorrect')
-        self.assertTrue(
-            abs(world_pose.pose.orientation.y - expected_pose.pose.orientation.y) < tol,
-            'y orientation incorrect')
-        self.assertTrue(
-            abs(world_pose.pose.orientation.z - expected_pose.pose.orientation.z) < tol,
-            'z orientation incorrect')
-        self.assertTrue(
-            abs(world_pose.pose.orientation.w - expected_pose.pose.orientation.w) < tol,
-            'w orientation incorrect')
+        self.assertEqual(world_pose.header.frame_id, expected_pose.header.frame_id)
+        self.assertAlmostEqual(world_pose.pose.position.x, expected_pose.pose.position.x, delta=tol)
+        self.assertAlmostEqual(world_pose.pose.position.y, expected_pose.pose.position.y, delta=tol)
+        self.assertAlmostEqual(world_pose.pose.position.z, expected_pose.pose.position.z, delta=tol)
+        self.assertAlmostEqual(world_pose.pose.orientation.x, expected_pose.pose.orientation.x, delta=tol)
+        self.assertAlmostEqual(world_pose.pose.orientation.y, expected_pose.pose.orientation.y, delta=tol)
+        self.assertAlmostEqual(world_pose.pose.orientation.z, expected_pose.pose.orientation.z, delta=tol)
+        self.assertAlmostEqual(world_pose.pose.orientation.w, expected_pose.pose.orientation.w, delta=tol)
 
 
 if __name__ == '__main__':
