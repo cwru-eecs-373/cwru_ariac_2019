@@ -25,7 +25,6 @@
 
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
-#include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <gazebo/common/Plugin.hh>
@@ -122,10 +121,13 @@ namespace gazebo
     public: ros::ServiceServer trayContentsServer;
 
     /// \brief Broadcaster for the tf frame of the tray
-    public: tf2_ros::StaticTransformBroadcaster tf_broadcaster;
+    public: tf2_ros::TransformBroadcaster tf_broadcaster;
 
     /// \brief Name of the tf transform
     public: std::string tf_frame_name;
+
+    /// \brief cache tray pose at start to work around bug where tray pose drops during AGV animation
+    public: ignition::math::Pose3d tray_pose;
 
     /// \brief Parts to ignore (will be published as faulty in tray msgs)
     /// The namespace of the part (e.g. bin7) is ignored.
