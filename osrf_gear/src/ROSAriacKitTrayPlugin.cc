@@ -139,7 +139,14 @@ void KitTrayPlugin::OnUpdate(const common::UpdateInfo & _info)
     this->PublishKitMsg();
   }
 
-  this->PublishTFTransform(_info.simTime);
+  // only publish transform once
+  // TODO(sloretz) why does tray start falling when AGV animates? Dynamic tf when that's fixed
+  static bool have_published_tf = false;
+  if (!have_published_tf)
+  {
+    this->PublishTFTransform(_info.simTime);
+    have_published_tf = true;
+  }
 }
 
 /////////////////////////////////////////////////
@@ -359,7 +366,7 @@ bool KitTrayPlugin::HandleGetContentService(
 
 void KitTrayPlugin::PublishTFTransform(const common::Time sim_time)
 {
-  ignition::math::Pose3d objectPose = this->model->GetLink()->WorldPose();
+  ignition::math::Pose3d objectPose = this->model->WorldPose();
   geometry_msgs::TransformStamped tfStamped;
   tfStamped.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
   tfStamped.header.frame_id = "world";

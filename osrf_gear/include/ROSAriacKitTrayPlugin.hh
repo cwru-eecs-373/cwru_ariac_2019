@@ -25,6 +25,7 @@
 
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <gazebo/common/Plugin.hh>
@@ -121,7 +122,7 @@ namespace gazebo
     public: ros::ServiceServer trayContentsServer;
 
     /// \brief Broadcaster for the tf frame of the tray
-    public: tf2_ros::TransformBroadcaster tf_broadcaster;
+    public: tf2_ros::StaticTransformBroadcaster tf_broadcaster;
 
     /// \brief Name of the tf transform
     public: std::string tf_frame_name;
