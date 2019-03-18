@@ -23,7 +23,7 @@
             <!-- If the namespace is set to ariac, the frame will also be namespaced -->
             <!-- So, we manually namespace the topic only -->
             <robotNamespace>/</robotNamespace>
-            <frameName>@(name)_frame</frameName>
+            <frameName>@(name)_laser_source_frame</frameName>
             <topicName>ariac/@(name)</topicName>
             <activation_topic>/ariac/sensor_enable</activation_topic>
           </plugin>
