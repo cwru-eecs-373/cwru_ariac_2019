@@ -3,8 +3,8 @@ faulty_products:
   - piston_rod_part_145
 random_seed: 5
 models_to_spawn:
-  # Spawn some models on shipping_box_0 on startup
-  shipping_box_0::box_base:
+  # Spawn some models on startup
+  agv1::kit_tray_1:
     models:
       part_0:
         type: order_part1

@@ -2,8 +2,8 @@ faulty_products:
   - gear_part_4
   - gear_part_5
 models_to_spawn:
-  # Spawn some models on shipping_box_0 on startup
-  shipping_box_0::box_base:
+  # Spawn some models on startup
+  agv1::kit_tray_1:
     models:
       part_0:
         type: order_part1

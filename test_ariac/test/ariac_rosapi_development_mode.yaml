@@ -6,10 +6,6 @@ topics:
 
   #####################################
   # Competition control
-  - topic: /ariac/shipping_boxes
-    type: osrf_gear/ShippingBoxContents
-    num_publishers: 1
-    num_subscribers: 1
 
   - topic: /ariac/current_score
     type: std_msgs/Float32
@@ -26,11 +22,11 @@ services:
   - service: /ariac/material_locations
     type: osrf_gear/GetMaterialLocations
 
-  - service: /ariac/shipping_box_0/clear_shipping_box
+  - service: /ariac/kit_tray_1/clear_tray
     type: std_srvs/Trigger
 
-  - service: /ariac/shipping_box_1/clear_shipping_box
+  - service: /ariac/kit_tray_2/clear_tray
     type: std_srvs/Trigger
 
-  - service: /ariac/submit_shipment
-    type: osrf_gear/SubmitShipment
+  - service: /ariac/submit_tray
+    type: osrf_gear/SubmitTray

@@ -36,452 +36,349 @@ AriacScorer::~AriacScorer()
 }
 
 /////////////////////////////////////////////////
+void AriacScorer::NotifyOrderStarted(gazebo::common::Time time, const osrf_gear::Order & order)
+{
+  AriacScorer::OrderInfo orderInfo;
+  orderInfo.start_time = time;
+  orderInfo.order = osrf_gear::Order::ConstPtr(new osrf_gear::Order(order));
+
+  boost::mutex::scoped_lock mutexLock(this->mutex);
+
+  orderInfo.priority = 1;
+  if (!this->orders.empty())
+  {
+    // orders after the first are implicitly higher priority
+    orderInfo.priority = 3;
+  }
+
+  auto it = this->orders.find(order.order_id);
+  if (it != this->orders.end())
+  {
+    gzerr << "[ARIAC ERROR] Order with duplicate ID '" << order.order_id << "'; overwriting\n";
+  }
+
+  this->orders[order.order_id] = orderInfo;
+}
+
+/////////////////////////////////////////////////
+void AriacScorer::NotifyOrderUpdated(gazebo::common::Time time, ariac::OrderID_t old_order, const osrf_gear::Order & order)
+{
+  AriacScorer::OrderUpdateInfo updateInfo;
+  updateInfo.update_time = time;
+  updateInfo.original_order_id = old_order; 
+  updateInfo.order = osrf_gear::Order::ConstPtr(new osrf_gear::Order(order));
+
+  boost::mutex::scoped_lock mutexLock(this->mutex);
+  auto it = this->orders.find(order.order_id);
+  if (it != this->orders.end())
+  {
+    gzerr << "[ARIAC ERROR] Asked to update nonexistant order '" << order.order_id << "'; ignoring\n";
+    return;
+  }
+
+  this->order_updates.push_back(updateInfo);
+}
+
+/////////////////////////////////////////////////
+void AriacScorer::NotifyShipmentReceived(gazebo::common::Time time, ariac::ShipmentType_t type, const osrf_gear::DetectedShipment & shipment)
+{
+  AriacScorer::ShipmentInfo shipmentInfo;
+  shipmentInfo.submit_time = time;
+  shipmentInfo.type = type;
+  shipmentInfo.shipment = osrf_gear::DetectedShipment::ConstPtr(new osrf_gear::DetectedShipment(shipment));
+
+  boost::mutex::scoped_lock mutexLock(this->mutex);
+  this->shipments.push_back(shipmentInfo);
+}
+
+/////////////////////////////////////////////////
+void AriacScorer::NotifyArmArmCollision(gazebo::common::Time /*time*/)
+{
+  boost::mutex::scoped_lock mutexLock(this->mutex);
+  this->arm_arm_collision = true;
+}
+
+/////////////////////////////////////////////////
 ariac::GameScore AriacScorer::GetGameScore()
 {
   boost::mutex::scoped_lock mutexLock(this->mutex);
-  return this->gameScore;
-}
 
-/////////////////////////////////////////////////
-ariac::OrderScore AriacScorer::GetOrderScore(const ariac::OrderID_t & orderID)
-{
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-  ariac::OrderScore score;
-  auto it = this->gameScore.orderScores.find(orderID);
-  if (it == this->gameScore.orderScores.end())
+  ariac::GameScore game_score;
+
+  // arm/arm collision results in zero score, but keep going for logging
+  game_score.was_arm_arm_collision = this->arm_arm_collision;
+
+  // Calculate the current score based on received orders and shipments
+  // For each order, how many shipments was it supposed to have?
+  // Set up shipment sc
+  for (auto & opair : this->orders)
   {
-    gzdbg << "No known order with ID: " << orderID << std::endl;
-    return score;
-  }
-  score = it->second;
-  return score;
-}
+    auto order_id = opair.first;
+    auto order_info = opair.second;
 
-/////////////////////////////////////////////////
-void AriacScorer::Update(double timeStep)
-{
-  boost::mutex::scoped_lock mutexLock(this->mutex);
+    gazebo::common::Time start_time = order_info.start_time;
+    int priority = order_info.priority;
+    osrf_gear::Order::ConstPtr order = order_info.order;
 
-  if (this->isProductTravelling)
-  {
-    this->gameScore.productTravelTime += timeStep;
-  }
-
-  if (this->newOrderReceived)
-  {
-    gzdbg << "New order received: " << this->newOrder.orderID << std::endl;
-    this->AssignOrder(this->newOrder);
-  }
-
-  // Update the time spent on all active orders
-  for (auto & item : this->gameScore.orderScores)
-  {
-    auto pOrderScore = &(item.second);
-    if (!pOrderScore->isComplete())
+    // If order was updated, score based on the lastest version of it
+    for (auto & update_info : this->order_updates)
     {
-      pOrderScore->timeTaken += timeStep;
-    }
-  }
-
-  this->newOrderReceived = false;
-  this->newShippingBoxInfoReceived = false;
-}
-
-/////////////////////////////////////////////////
-bool AriacScorer::IsOrderComplete(const ariac::OrderID_t & orderID)
-{
-  auto orderScore = GetOrderScore(orderID);
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-  return orderScore.isComplete();
-}
-
-/////////////////////////////////////////////////
-std::vector<ariac::ShippingBox> AriacScorer::GetShippingBoxes()
-{
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-  std::vector<ariac::ShippingBox> shippingBoxesVec;
-  for (auto const & item : this->shippingBoxes)
-  {
-    shippingBoxesVec.push_back(item.second);
-  }
-  return shippingBoxesVec;
-}
-
-/////////////////////////////////////////////////
-bool AriacScorer::GetShippingBoxById(const ariac::ShippingBoxID_t & shippingBoxID, ariac::ShippingBox & shippingBox)
-{
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-  auto it = this->shippingBoxes.find(shippingBoxID);
-  if (it == this->shippingBoxes.end())
-  {
-    gzwarn << "No known shipping box with ID: " << shippingBoxID << std::endl;
-    return false;
-  }
-  shippingBox = it->second;
-  return true;
-}
-
-/////////////////////////////////////////////////
-ariac::ShipmentScore AriacScorer::SubmitShipment(const ariac::ShippingBox & shippingBox)
-{
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-  ariac::ShipmentScore shipmentScore;
-  ariac::ShipmentType_t shipmentType = shippingBox.currentShipment.shipmentType;
-
-  // Determine order and shipment the shipping box is from
-  ariac::Order relevantOrder;
-  ariac::Shipment assignedShipment;
-
-  for (const auto & order : this->ordersInProgress)
-  {
-    auto it = find_if(order.shipments.begin(), order.shipments.end(),
-      [&shipmentType](const ariac::Shipment& shipment) {
-        return shipment.shipmentType == shipmentType;
-      });
-    if (it != order.shipments.end())
-    {
-      assignedShipment = *it;
-      relevantOrder = order;
-      break;
-    }
-  }
-
-  // Ignore unknown shipping boxes
-  ariac::OrderID_t orderId = relevantOrder.orderID;
-  if (orderId == "")
-  {
-    gzdbg << "No known shipment type: " << shipmentType << std::endl;
-    gzdbg << "Known shipment types are: " << std::endl;
-    for (const ariac::Order & order : this->ordersInProgress)
-    {
-      for (const ariac::Shipment & shipment : order.shipments)
+      if (update_info.original_order_id == order_id)
       {
-        gzdbg << shipment.shipmentType << std::endl;
+        order = update_info.order;
+        start_time = update_info.update_time;
       }
     }
-    return shipmentScore;
-  }
 
-  // Do not allow re-submission of shipping boxes - just return the existing score.
-  auto relevantOrderScore = &this->gameScore.orderScores[orderId];
-  auto it = relevantOrderScore->shipmentScores.find(shipmentType);
-  if (it != relevantOrderScore->shipmentScores.end())
-  {
-    shipmentScore = it->second;
-    if (shipmentScore.isSubmitted)
+    // Create score class for order
+    ariac::OrderScore order_score;
+    order_score.orderID = order_id;
+    order_score.priority = priority;
+    auto oit = game_score.orderScores.find(order_id);
+    if (oit != game_score.orderScores.end())
     {
-      gzdbg << "Shipment already submitted, not rescoring: " << shipmentType << std::endl;
-      return shipmentScore;
+      gzerr << "[ARIAC ERROR] Multiple orders of duplicate ids:" << order_score.orderID << "\n";
     }
-  }
 
-  // Evaluate the shipping box against the shipment it contains
-  shipmentScore = ScoreShippingBox(shippingBox, assignedShipment);
-
-  // Mark the shipment as submitted
-  shipmentScore.isSubmitted = true;
-
-  gzdbg << "Score from shipment '" << shippingBox.shippingBoxID << "': " << shipmentScore.total() << std::endl;
-
-  // Add the shipment to the game score
-  relevantOrderScore->shipmentScores[shipmentType] = shipmentScore;
-
-  return shipmentScore;
-}
-
-/////////////////////////////////////////////////
-ariac::ShipmentScore AriacScorer::ScoreShippingBox(const ariac::ShippingBox & shippingBox, const ariac::Shipment & assignedShipment)
-{
-  ariac::Shipment shipment = shippingBox.currentShipment;
-  ariac::ShipmentType_t shipmentType = shippingBox.currentShipment.shipmentType;
-  ariac::ShipmentScore score;
-  score.shipmentType = shipmentType;
-  gzdbg << "Scoring shipment: " << shipment << std::endl;
-
-  auto numAssignedProducts = assignedShipment.products.size();
-  auto numCurrentProducts = shipment.products.size();
-  gzdbg << "Comparing the " << numAssignedProducts << " assigned products with the current " << \
-    numCurrentProducts << " products" << std::endl;
-
-  // Count the number of each type of assigned product
-  std::map<std::string, unsigned int> assignedProductTypeCount, currentProductTypeCount;
-  for (const auto & obj : assignedShipment.products)
-  {
-    if (assignedProductTypeCount.find(obj.type) == assignedProductTypeCount.end())
+    // Create score classes for shipments
+    for (const auto & expected_shipment : order->shipments)
     {
-      assignedProductTypeCount[obj.type] = 0;
+      ariac::ShipmentScore shipment_score;
+      shipment_score.shipmentType = expected_shipment.shipment_type;
+      auto it = order_score.shipmentScores.find(expected_shipment.shipment_type);
+      if (it != order_score.shipmentScores.end())
+      {
+        gzerr << "[ARIAC ERROR] Order contained duplicate shipment types:" << expected_shipment.shipment_type << "\n";
+      }
+      order_score.shipmentScores[expected_shipment.shipment_type] = shipment_score;
     }
-    assignedProductTypeCount[obj.type] += 1;
-  }
 
-  gzdbg << "Checking product counts" << std::endl;
+    std::vector<std::string> claimed_shipments;
 
-  bool assignedProductsMissing = false;
-  for (auto & value : assignedProductTypeCount)
-  {
-    auto assignedProductType = value.first;
-    auto assignedProductCount = value.second;
-    auto currentProductCount =
-      std::count_if(shipment.products.begin(), shipment.products.end(),
-        [assignedProductType](ariac::Product k) {return !k.isFaulty && k.type == assignedProductType;});
-    gzdbg << "Found " << currentProductCount << \
-      " products of type '" << assignedProductType << "'" << std::endl;
-    score.productPresence +=
-      std::min(long(assignedProductCount), currentProductCount) * scoringParameters.productPresence;
-    if (currentProductCount < assignedProductCount)
+    // Find actual shipments that belong to this order
+    for (const auto & desired_shipment : order->shipments)
     {
-      assignedProductsMissing = true;
-    }
-  }
-  if (!assignedProductsMissing && numCurrentProducts == numAssignedProducts)
-  {
-    gzdbg << "All products in shipment and no extra products detected." << std::endl;
-    score.allProductsBonus += scoringParameters.allProductsBonusFactor * numAssignedProducts;
-  }
-
-  gzdbg << "Checking product poses" << std::endl;
-  // Keep track of which assigned products have already been 'matched' to one on the shippingBox.
-  // This is to prevent multiple products being close to a single target pose both scoring points.
-  std::vector<ariac::Product> remainingAssignedProducts(assignedShipment.products);
-
-  for (const auto & currentProduct : shipment.products)
-  {
-    for (auto it = remainingAssignedProducts.begin(); it != remainingAssignedProducts.end(); ++it)
-    {
-      // Only check poses of products of the same type
-      auto assignedProduct = *it;
-      if (assignedProduct.type != currentProduct.type)
-        continue;
-
-      gzdbg << "\n\nEvaluating product of type '" << currentProduct.type << "'" << std::endl;
-
-      // Ignore faulty products
-      if (currentProduct.isFaulty)
+      for (const auto & shipment_info : this->shipments)
       {
-        gzdbg << "Skipping product because it is faulty" << std::endl;
-        continue;
-      }
-
-      // Check the position of the product (ignoring orientation)
-      gzdbg << "Comparing pose '" << currentProduct.pose << \
-        "' with the assigned pose '" << assignedProduct.pose << "'" << std::endl;
-      ignition::math::Vector3d posnDiff(
-        currentProduct.pose.Pos().X() - assignedProduct.pose.Pos().X(),
-        currentProduct.pose.Pos().Y() - assignedProduct.pose.Pos().Y(),
-        0);
-      gzdbg << "Position error: " << posnDiff.Length() << std::endl;
-      if (posnDiff.Length() > scoringParameters.distanceThresh)
-      {
-        gzdbg << "Skipping product because it is not in the correct position" << std::endl;
-        continue;
-      }
-      gzdbg << "Product of type '" << currentProduct.type << \
-        "' in the correct position" << std::endl;
-      score.productPose += scoringParameters.productPosition;
-
-      // Check the orientation of the product.
-      ignition::math::Quaterniond objOrientation = currentProduct.pose.Rot();
-      ignition::math::Quaterniond orderOrientation = assignedProduct.pose.Rot();
-
-      // Filter products that aren't in the appropriate orientation (loosely).
-      // If the quaternions represent the same orientation, q1 = +-q2 => q1.dot(q2) = +-1
-      double orientationDiff = objOrientation.Dot(orderOrientation);
-      // TODO: this value can probably be derived using relationships between
-      // euler angles and quaternions.
-      double quaternionDiffThresh = 0.05;
-      gzdbg << "Cosine of angle between orientations (quaternion dot product): " << \
-        orientationDiff << std::endl;
-      if (std::abs(orientationDiff) < (1.0 - quaternionDiffThresh))
-      {
-        gzdbg << "Skipping product because it is not in the correct orientation (roughly)" << std::endl;
-        continue;
-      }
-
-      // Filter the yaw based on a threshold set in radians (more user-friendly).
-      double angleDiff = objOrientation.Yaw() - orderOrientation.Yaw();
-      gzdbg << "Orientation error (yaw): " << std::abs(angleDiff) << \
-        " (or " << std::abs(std::abs(angleDiff) - 2 * M_PI) << ")" << std::endl;
-      if (std::abs(angleDiff) > scoringParameters.orientationThresh)
-      {
-        // Account for wrapping in angles. E.g. -pi compared with pi should "pass".
-        if (std::abs(std::abs(angleDiff) - 2 * M_PI) > scoringParameters.orientationThresh)
+        if (desired_shipment.shipment_type == shipment_info.type)
         {
-          gzdbg << "Skipping product because it is not in the correct orientation" << std::endl;
-          continue;
+          if (shipment_info.submit_time < start_time)
+          {
+            // Maybe order was updated, this shipment was submitted too early
+            continue;
+          }
+          // If the same shipment was submitted twice, only count the first one
+          bool is_claimed = false;
+          for (const auto & type : claimed_shipments)
+          {
+            if (type == desired_shipment.shipment_type)
+            {
+              is_claimed = true;
+              break;
+            }
+          }
+          if (is_claimed)
+          {
+            continue;
+          }
+          claimed_shipments.push_back(desired_shipment.shipment_type);
+          order_score.shipmentScores[desired_shipment.shipment_type] =
+            this->GetShipmentScore(shipment_info.submit_time, desired_shipment, *(shipment_info.shipment));
         }
       }
-
-      gzdbg << "Product of type '" << currentProduct.type << \
-        "' in the correct orientation" << std::endl;
-      score.productPose += scoringParameters.productOrientation;
-
-      // Once a match is found, don't permit it to be matched again
-      remainingAssignedProducts.erase(it);
-      break;
     }
-  }
 
-  // Check if all assigned products have been matched to one in the shipping box
-  if (remainingAssignedProducts.empty())
-  {
-    score.isComplete = true;
-  }
-
-  return score;
-}
-
-/////////////////////////////////////////////////
-void AriacScorer::OnShippingBoxInfoReceived(const osrf_gear::ShippingBoxContents::ConstPtr & shippingBoxMsg)
-{
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-
-  // Get the ID of the shipping box that the message is from.
-  std::string shippingBoxID = shippingBoxMsg->shipping_box;
-
-  if (this->shippingBoxes.find(shippingBoxID) == this->shippingBoxes.end())
-  {
-    // This is the first time we've heard from this shipping box: initialize it.
-    this->shippingBoxes[shippingBoxID] = ariac::ShippingBox(shippingBoxID);
-  }
-
-  // Update the state of the shippingBox.
-  // TODO: this should be moved outside of the callback
-  // Do this even if the shipment isn't product of the current order because maybe it
-  // will be product of future orders.
-  this->newShippingBoxInfoReceived = true;
-  ariac::Shipment shipmentState;
-  FillShipmentFromMsg(shippingBoxMsg, shipmentState);
-  this->shippingBoxes[shippingBoxID].UpdateShipmentState(shipmentState);
-}
-
-/////////////////////////////////////////////////
-void AriacScorer::OnOrderReceived(const osrf_gear::Order::ConstPtr & orderMsg)
-{
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-  gzdbg << "Received an order" << std::endl;
-  this->newOrderReceived = true;
-
-  ariac::Order order;
-  order.orderID = orderMsg->order_id;
-  // Initialize the name of each of the expected shipments.
-  for (const auto & shipmentMsg : orderMsg->shipments)
-  {
-    ariac::ShipmentType_t shipmentType = shipmentMsg.shipment_type;
-    ariac::Shipment assignedShipment;
-    FillShipmentFromMsg(shipmentMsg, assignedShipment);
-    order.shipments.push_back(assignedShipment);
-  }
-  this->newOrder = order;
-}
-
-/////////////////////////////////////////////////
-void AriacScorer::AssignOrder(const ariac::Order & order)
-{
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-  gzdbg << "Assigned order: " << order << std::endl;
-  ariac::OrderID_t orderID = order.orderID;
-  if (this->gameScore.orderScores.find(orderID) == this->gameScore.orderScores.end())
-  {
-    // This is a previously unseen order: start scoring from scratch
-    auto orderScore = ariac::OrderScore();
-    orderScore.orderID = orderID;
-    for (auto const & shipment : order.shipments)
+    // Figure out the time taken to complete an order
+    if (order_score.isComplete())
     {
-      auto shipmentScore = ariac::ShipmentScore();
-      shipmentScore.shipmentType = shipment.shipmentType;
-      orderScore.shipmentScores[shipment.shipmentType] = shipmentScore;
+      // The latest submitted shipment time is the order completion time
+      gazebo::common::Time end = start_time;
+      for (auto & sspair : order_score.shipmentScores)
+      {
+        if (sspair.second.submit_time > end)
+        {
+          end = sspair.second.submit_time;
+        }
+      }
+      order_score.timeTaken = (end - start_time).Double();
     }
-    this->gameScore.orderScores[orderID] = orderScore;
+
+    game_score.orderScores[order_id] = order_score;
   }
 
-  this->ordersInProgress.push_back(order);
+  return game_score;
 }
 
-/////////////////////////////////////////////////
-void AriacScorer::UpdateOrder(const ariac::Order & order)
+ariac::ShipmentScore AriacScorer::GetShipmentScore(
+  gazebo::common::Time submit_time,
+  const osrf_gear::Shipment & desired_shipment,
+  const osrf_gear::DetectedShipment & actual_shipment)
 {
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-  gzdbg << "Updated order: " << order << std::endl;
-  ariac::OrderID_t orderID = order.orderID;
-  auto it = find_if(this->ordersInProgress.begin(), this->ordersInProgress.end(),
-      [&orderID](const ariac::Order& o) {
-        return o.orderID == orderID;
-      });
-  if (it == this->ordersInProgress.end())
-  {
-    gzerr << "No order with ID: " << orderID << std::endl;
-    return;
-  }
-  // TODO: re-evaluating any existing score.
-  *it = order;
-}
+  ariac::ShipmentScore scorer;
+  scorer.isSubmitted = true;
+  scorer.submit_time = submit_time;
 
-/////////////////////////////////////////////////
-ariac::OrderScore AriacScorer::UnassignOrder(const ariac::OrderID_t & orderID)
-{
-  gzdbg << "Unassign order request for: " << orderID << std::endl;
-  ariac::OrderScore orderScore;
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-  auto it1 = find_if(this->ordersInProgress.begin(), this->ordersInProgress.end(),
-      [&orderID](const ariac::Order& o) {
-        return o.orderID == orderID;
-      });
-  if (it1 == this->ordersInProgress.end())
-  {
-    gzerr << "No order with ID: " << orderID << std::endl;
-    return orderScore;
-  }
-  auto it = this->gameScore.orderScores.find(orderID);
-  if (it == this->gameScore.orderScores.end())
-  {
-    gzerr << "No order score with ID: " << orderID << std::endl;
-    return orderScore;
-  }
-  orderScore = it->second;
-  gzdbg << "Unassigning order: " << orderID << std::endl;
-  this->ordersInProgress.pop_back();
-  return orderScore;
-}
+  bool has_faulty_product = false;
+  bool is_missing_products = false;
+  bool has_unwanted_product = false;
+  scorer.productPresence = 0;
+  scorer.allProductsBonus = 0;
+  scorer.productPose = 0;
 
-/////////////////////////////////////////////////
-void AriacScorer::FillShipmentFromMsg(const osrf_gear::ShippingBoxContents::ConstPtr &shippingBoxMsg, ariac::Shipment &shipment)
-{
-  shipment.products.clear();
-  for (const auto & objMsg : shippingBoxMsg->products)
+  // Separate faulty and non-faulty products
+  std::vector<osrf_gear::DetectedProduct> non_faulty_products;
+  for (const auto & actual_product : actual_shipment.products)
   {
-    ariac::Product obj;
-    obj.type = ariac::DetermineModelType(objMsg.type);
-    obj.isFaulty = objMsg.is_faulty;
-    geometry_msgs::Point p = objMsg.pose.position;
-    geometry_msgs::Quaternion o = objMsg.pose.orientation;
-    ignition::math::Vector3d objPosition(p.x, p.y, p.z);
-    ignition::math::Quaterniond objOrientation(o.w, o.x, o.y, o.z);
-    objOrientation.Normalize();
-    obj.pose = ignition::math::Pose3d(objPosition, objOrientation);
-    shipment.products.push_back(obj);
+    if (actual_product.is_faulty)
+    {
+      has_faulty_product = true;
+    }
+    else
+    {
+      non_faulty_products.push_back(actual_product);
+    }
   }
-}
+  // Match products with desired products
+  // must check all permutations to make sure the product pose is correct
+  //  for each type of product
+  //    if size(desired_products_with_type) != size(actual_products_with_type)
+  //      ineligeble for all products bonus
+  //    contributing_presence_score = min(desired_products.size(), actual_products.size())
+  //    contributing_pose_score = 0
+  //    for each permutation of actual proudcts and desired products
+  //      score product pose and product presense
+  //      if permutation_pose_score > contributing_pose_score:
+  //        contibuting_pose_score = permutation_pose_score
+  //    scorer.productPose += contributing_pose_score
+  //    scorer.productPresense += contributing_presence_score
+  //  if eligible for all products bonus:
+  //    scorer.allProductsBonus = scorer.productPresense
 
-/////////////////////////////////////////////////
-void AriacScorer::FillShipmentFromMsg(const osrf_gear::Shipment &shipmentMsg, ariac::Shipment &shipment)
-{
-  shipment.products.clear();
-  for (const auto & objMsg : shipmentMsg.products)
+
+  // Map of product type to indexes in desired products (first) and indexes in non faulty actual products (second)
+  std::map<std::string, std::pair<std::vector<size_t>, std::vector<size_t>>> product_type_map;
+  for (size_t d = 0; d < desired_shipment.products.size(); ++d)
   {
-    ariac::Product obj;
-    obj.type = ariac::DetermineModelType(objMsg.type);
-    geometry_msgs::Point p = objMsg.pose.position;
-    geometry_msgs::Quaternion o = objMsg.pose.orientation;
-    ignition::math::Vector3d objPosition(p.x, p.y, p.z);
-    ignition::math::Quaterniond objOrientation(o.w, o.x, o.y, o.z);
-    obj.pose = ignition::math::Pose3d(objPosition, objOrientation);
-    shipment.products.push_back(obj);
+    const auto & desired_product = desired_shipment.products[d];
+    auto & mapping = product_type_map[desired_product.type];
+    mapping.first.push_back(d);
   }
-}
+  for (size_t a = 0; a < non_faulty_products.size(); ++a)
+  {
+    const auto & actual_product = non_faulty_products[a];
+    if (0u == product_type_map.count(actual_product.type))
+    {
+      // since desired products were put into the type map first, this product must be unwanted
+      has_unwanted_product = true;
+      continue;
+    }
+    auto & mapping = product_type_map.at(actual_product.type);
+    mapping.second.push_back(a);
+  }
 
-/////////////////////////////////////////////////
-void AriacScorer::OnGripperStateReceived(const osrf_gear::VacuumGripperState &stateMsg)
-{
-  boost::mutex::scoped_lock mutexLock(this->mutex);
-  this->isProductTravelling = stateMsg.enabled && stateMsg.attached;
+  for (const auto & type_pair : product_type_map)
+  {
+    const std::vector<size_t> & desired_indexes = type_pair.second.first;
+    const std::vector<size_t> & actual_indexes = type_pair.second.second;
+    if (desired_indexes.size() > actual_indexes.size())
+    {
+      is_missing_products = true;
+    }
+    else if (desired_indexes.size() < actual_indexes.size())
+    {
+      has_unwanted_product = true;
+    }
+
+      // no point in trying to score this type if there are none delivered
+    if (actual_indexes.empty())
+    {
+      continue;
+    }
+
+    scorer.productPresence += std::min(desired_indexes.size(), actual_indexes.size());
+
+    double contributing_pose_score = 0;
+    size_t num_indices = std::max(desired_indexes.size(), actual_indexes.size());
+    std::vector<size_t> permutation(num_indices);
+    for (size_t i = 0; i < num_indices; ++i)
+    {
+      permutation[i] = i;
+    }
+    // Now iterate through all permutations of actual matched with desired to find the highest pose score
+    do
+    {
+      double permutation_pose_score = 0;
+      for (size_t d = 0; d < desired_indexes.size(); ++d)
+      {
+        const size_t actual_index_index = permutation[d];
+        if (actual_index_index >= actual_indexes.size())
+        {
+          // There were fewer actual products than the order called for
+          continue;
+        }
+        const auto & desired_product = desired_shipment.products[desired_indexes[d]];
+        const auto & actual_product = non_faulty_products[actual_indexes[actual_index_index]];
+        // Add points for each product in the correct pose
+        const double translation_target = 0.03;  // 3 cm
+        const double orientation_target = 0.1;  // 0.1 rad
+        // get translation distance
+        ignition::math::Vector3d posnDiff(
+          desired_product.pose.position.x - actual_product.pose.position.x,
+          desired_product.pose.position.y - actual_product.pose.position.y,
+          0);
+        const double distance = posnDiff.Length();
+        if (distance > translation_target)
+        {
+          // Skipping product because translation error is too big
+          continue;
+        }
+
+        ignition::math::Quaterniond orderOrientation(
+          desired_product.pose.orientation.w,
+          desired_product.pose.orientation.x,
+          desired_product.pose.orientation.y,
+          desired_product.pose.orientation.z);
+        ignition::math::Quaterniond objOrientation(
+          actual_product.pose.orientation.w,
+          actual_product.pose.orientation.x,
+          actual_product.pose.orientation.y,
+          actual_product.pose.orientation.z);
+
+        // Filter products that aren't in the appropriate orientation (loosely).
+        // If the quaternions represent the same orientation, q1 = +-q2 => q1.dot(q2) = +-1
+        const double orientationDiff = objOrientation.Dot(orderOrientation);
+        // TODO: this value can probably be derived using relationships between
+        // euler angles and quaternions.
+        const double quaternionDiffThresh = 0.05;
+        if (std::abs(orientationDiff) < (1.0 - quaternionDiffThresh))
+        {
+          // Skipping product because it is not in the correct orientation (roughly)
+          continue;
+        }
+
+        // Filter the yaw based on a threshold set in radians (more user-friendly).
+        // Account for wrapping in angles. E.g. -pi compared with pi should "pass".
+        double angleDiff = objOrientation.Yaw() - orderOrientation.Yaw();
+        if ( (std::abs(angleDiff) < orientation_target)
+          || (std::abs(std::abs(angleDiff) - 2 * M_PI) <= orientation_target))
+        {
+           permutation_pose_score += 1.0;
+        }
+      }
+      if (permutation_pose_score > contributing_pose_score)
+      {
+        contributing_pose_score = permutation_pose_score;
+      }
+    } while (std::next_permutation(permutation.begin(), permutation.end()));
+
+    // Add the pose score contributed by the highest scoring permutation
+    scorer.productPose += contributing_pose_score;
+  }
+
+  if (!has_faulty_product && !has_unwanted_product && !is_missing_products)
+  {
+    scorer.allProductsBonus = scorer.productPresence;
+  }
+
+  return scorer;
 }

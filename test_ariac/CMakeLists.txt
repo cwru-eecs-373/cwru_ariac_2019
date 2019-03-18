@@ -19,16 +19,16 @@ catkin_package(
 )
 
 set(rostests
-  ariac_rosapi.test
-  ariac_rosapi_development_mode.test
-  ariac_example.test
-  ariac_tf_frames.test
-  gripper.test
-  gripper_drop_over_bins.test
-  gripper_drop_over_box.test
+  test/ariac_rosapi.test
+  test/ariac_rosapi_development_mode.test
+  test/ariac_example.test
+  test/ariac_tf_frames.test
+  test/gripper.test
+  test/gripper_drop_over_bins.test
+  test/gripper_drop_over_box.test
   # gripper_unthrottled.test  # this needs a good gripper pose; regression is fixed.
-  sensors.test
-  sensor_blackout.test
+  test/sensors.test
+  test/sensor_blackout.test
   test_scoring/ariac_scoring_perfect_shipment.test
   test_scoring/ariac_scoring_after_waiting.test
   test_scoring/ariac_scoring_after_waiting_with_state_logging.test
@@ -58,32 +58,13 @@ endforeach()
 # Install test files because we'll run tests from the install tree.  We could
 # get away with running most of the test from the source tree, but it's clearer
 # and safer to run them from the install tree.
-install(FILES
-  ${rostests}
-  ariac_rosapi.yaml
-  ariac_rosapi_development_mode.yaml
-  minimal_sample_unthrottled.yaml
-  tf_sensors.yaml
-  product_drop_over_bins.yaml
-  product_drop_over_box.yaml
-  sensor_blackout.yaml
-  test_scoring/scoring_base_order.yaml
-  test_scoring/scoring_base_order_flipped.yaml
-  test_scoring/scoring_base_order_interrupted.yaml
-  test_scoring/scoring_base_order_updated.yaml
-  test_scoring/scoring_partial_shipment_both_shipments.yaml
-  test_scoring/scoring_perfect_shipment.yaml
-  test_scoring/scoring_perfect_shipment_both_shipments.yaml
-  test_scoring/scoring_perfect_shipment_flipped.yaml
-  test_scoring/scoring_correct_parts_incorrect_poses.yaml
-  test_scoring/scoring_correct_parts_plus_unwanted.yaml
-  test_scoring/scoring_correct_parts_plus_faulty.yaml
-  test_scoring/scoring_correct_parts_not_flipped.yaml
-  test_scoring/scoring_missing_parts.yaml
-  test_scoring/scoring_faulty_parts.yaml
-  test_scoring/scoring_faulty_parts_randomized.yaml
-  test_scoring/scoring_perfect_shipment_both_shipments.yaml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/test
+install(DIRECTORY
+  test
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/
+)
+install(DIRECTORY
+  test_scoring
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
 install(PROGRAMS
@@ -93,8 +74,6 @@ install(PROGRAMS
   test_gripper_drop_over_bins.py
   test_gripper_drop_over_box.py
   test_gripper_unthrottled.py
-  test_scoring_after_waiting.py
-  test_scoring_after_waiting.py
   test_scoring_against_expected_score.py
   test_sensor_blackout.py
   test_sensors.py

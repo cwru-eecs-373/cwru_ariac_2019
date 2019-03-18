@@ -31,15 +31,14 @@ add_message_files(DIRECTORY msg
   DetectedProduct.msg
   Shipment.msg
   Product.msg
-  ShippingBox.msg
+  Shipment.msg
+  DetectedShipment.msg
   LogicalCameraImage.msg
   Model.msg
   Order.msg
   PopulationState.msg
   Proximity.msg
   StorageUnit.msg
-  ShippingBoxContents.msg
-  TrayContents.msg
   VacuumGripperState.msg
 )
 
@@ -47,6 +46,7 @@ add_service_files(DIRECTORY srv
   FILES
   AGVControl.srv
   DroneControl.srv
+  DetectShipment.srv
   ConveyorBeltControl.srv
   GetMaterialLocations.srv
   PopulationControl.srv
@@ -220,19 +220,6 @@ install(TARGETS ${conveyor_congestion_plugin}
   RUNTIME DESTINATION bin
 )
 
-# Create the libROSDronePlugin.so library.
-set(ros_drone_plugin_name ROSDronePlugin)
-add_library(${ros_drone_plugin_name} src/ROSDronePlugin.cc)
-target_link_libraries(${ros_drone_plugin_name} ${GAZEBO_LIBRARIES})
-add_dependencies(${ros_drone_plugin_name}
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-)
-install(TARGETS ${ros_drone_plugin_name}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
 # Create the libProximityRayPlugin.so library.
 set(proximity_ray_plugin_name ProximityRayPlugin)
 add_library(${proximity_ray_plugin_name} src/ProximityRayPlugin.cc)
@@ -356,39 +343,6 @@ install(TARGETS ${object_disposal_plugin_name}
   RUNTIME DESTINATION bin
 )
 
-# Create the libROSAriacShippingBoxPlugin.so library.
-set(shipping_box_plugin_name ROSAriacShippingBoxPlugin)
-add_library(${shipping_box_plugin_name} src/ROSAriacShippingBoxPlugin.cc)
-target_link_libraries(${shipping_box_plugin_name}
-  ${GAZEBO_LIBRARIES}
-  ${roscpp_LIBRARIES}
-  ${side_contact_plugin_name}
-)
-add_dependencies(${shipping_box_plugin_name}
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-)
-install(TARGETS ${shipping_box_plugin_name}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-# Create the libAriacShippingBox.so library.
-set(target_name AriacShippingBox)
-add_library(${target_name} src/AriacShippingBox.cpp)
-target_link_libraries(${target_name}
-  ${GAZEBO_LIBRARIES}
-  ${roscpp_LIBRARIES}
-)
-add_dependencies(${target_name}
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-)
-install(TARGETS ${target_name}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
 # Create the libROSAriacKitTrayPlugin.so library.
 set(kit_tray_plugin_name ROSAriacKitTrayPlugin)
 add_library(${kit_tray_plugin_name} src/ROSAriacKitTrayPlugin.cc)
@@ -411,7 +365,6 @@ add_library(${target_name} src/AriacScorer.cpp)
 target_link_libraries(${target_name}
   ${GAZEBO_LIBRARIES}
   ${roscpp_LIBRARIES}
-  AriacShippingBox
 )
 add_dependencies(${target_name}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
@@ -471,3 +424,13 @@ install(DIRECTORY vendor/
 catkin_add_env_hooks(99_osrf_gear_setup
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
   SHELLS sh)
+
+################
+## Unit tests ##
+################
+
+if (CATKIN_ENABLE_TESTING)
+  catkin_add_gtest(test_ariac_scorer test/test_ariac_scorer.cpp)
+  target_link_libraries(test_ariac_scorer
+    AriacScorer ignition-math4::ignition-math4)
+endif()

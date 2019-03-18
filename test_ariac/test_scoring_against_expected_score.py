@@ -15,32 +15,33 @@ class ScoringTester(ExampleNodeTester):
     def test(self):
         expectedScore = float(sys.argv[1])
         rospy.loginfo('Using expected score of: ' + str(expectedScore))
+        commands = []
         if len(sys.argv) > 2:
-            self.shipping_box_1_first = sys.argv[2] == '--shipping-box-1-first'
+            for arg in sys.argv[2:]:
+                if arg.startswith('--'):
+                    break
+                commands.append(arg)
+        self.assertNotEqual([], commands)
         self.prepare_tester()
 
         # Starting the competition will cause products from the order to be spawned on shipping_box_0
         self._test_start_comp()
 
-        if self.shipping_box_1_first:
-            # Submit the tray on shipping_box_1
-            self._test_submit_shipment(shipping_box_index=1, shipment_id='order_1_shipment_0')
-            time.sleep(5.0)
-            # Submit the tray on shipping_box_0
-            self._test_submit_shipment()
-            time.sleep(5.0)
-        else:
-            # Submit the tray on shipping_box_0
-            self._test_submit_shipment()
-            time.sleep(5.0)
-            # Submit the tray on shipping_box_1
-            self._test_submit_shipment(shipping_box_index=1, shipment_id='order_1_shipment_0')
-            time.sleep(5.0)
+        for command in commands:
+            opcode, arg = command.split(":")
+            if "wait" == opcode:
+                print('Waiting for ' + arg + ' seconds')
+                time.sleep(float(arg))
+            elif "submit_agv1" == opcode:
+                print('Submitting agv1 shipment ' + arg)
+                self._test_submit_shipment(shipment_type=arg, agv_num=1)
+            elif "submit_agv2" == opcode:
+                print('Submitting agv2 shipment ' + arg)
+                self._test_submit_shipment(shipment_type=arg, agv_num=2)
+            else:
+                raise ValueError("unknown command: " + repr(command))
 
-        self.assertTrue(
-            self.current_comp_score == expectedScore,
-            'Something went wrong in the scoring. Expected score of ' + str(expectedScore) +
-            ' but received: ' + str(self.current_comp_score))
+        self.assertEqual(self.current_comp_score, expectedScore)
 
 
 if __name__ == '__main__':

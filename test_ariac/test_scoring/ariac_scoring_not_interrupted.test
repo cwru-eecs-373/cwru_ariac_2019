@@ -6,11 +6,11 @@
     will be published once the first order is complete -->
   <node name="ariac_sim" pkg="osrf_gear" type="gear.py"
         args="-f
-              $(find test_ariac)/test/scoring_base_order_interrupted.yaml
-              $(find test_ariac)/test/scoring_partial_shipment_both_shipments.yaml
+              $(find test_ariac)/test_scoring/scoring_base_order_interrupted.yaml
+              $(find test_ariac)/test_scoring/scoring_partial_shipment_both_shipments.yaml
               $(find osrf_gear)/config/sample_user_config.yaml
               --development-mode --verbose --no-gui"/>
   <test pkg="test_ariac" type="test_scoring_against_expected_score.py"
         test-name="test_scoring_not_interrupted_order"
-        time-limit="60.0" args="6"/> <!-- 2 + 4 -->
+        time-limit="60.0" args="14 submit_agv1:order_0_shipment_0 wait:5 submit_agv2:order_1_shipment_0 wait:5"/> <!-- 2 + 3*4 -->
 </launch>

@@ -54,9 +54,6 @@ namespace gazebo
     /// \brief Receives service calls for controlling the AGV
     public: ros::ServiceServer rosService;
 
-    /// \brief Client for submitting trays for inspection
-    public: ros::ServiceClient rosSubmitTrayClient;
-
     /// \brief Transportation node.
     public: transport::NodePtr gzNode;
 
@@ -75,9 +72,6 @@ namespace gazebo
     /// \brief Pointer to the model
     public: gazebo::physics::ModelPtr model;
 
-    /// \brief Type of kit assigned to the AGV
-    public: std::string kitType;
-
     /// \brief The state of the AGV
     public: std::string currentState;
 
@@ -89,9 +83,6 @@ namespace gazebo
 
     /// \brief Flag for triggering tray delivery from the service callback
     public: bool deliveryTriggered = false;
-
-    /// \brief Evaluation result of the tray (negative means that the tray was invalid)
-    public: int inspectionResult = -1;
 
     /// \brief Publishes the AGV state.
     public: ros::Publisher statePub;
@@ -151,13 +142,11 @@ void ROSAGVPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   this->dataPtr->trayLinkName =
     this->dataPtr->agvName + "::kit_tray_" + index + "::kit_tray_" + index + "::tray";
 
-  std::string agvControlTopic = "/ariac/" + this->dataPtr->agvName;
-  ROS_DEBUG_STREAM("Using AGV control service topic: " << agvControlTopic);
-
-  std::string submitTrayTopic = "submit_tray";
-  if (_sdf->HasElement("submit_tray_service_name"))
-    submitTrayTopic = _sdf->Get<std::string>("submit_tray_service_name");
-  ROS_DEBUG_STREAM("Using submit tray service topic: " << submitTrayTopic);
+  // Topic used to ask AGV to move
+  std::string agvControlService = "animate";
+  if (_sdf->HasElement("agv_control_service_name"))
+    agvControlService = _sdf->Get<std::string>("agv_control_service_name");
+  ROS_DEBUG_STREAM("Using AGV control service: " << agvControlService);
 
   std::string lockTrayServiceName = "lock_tray_models";
   if (_sdf->HasElement("lock_tray_service_name"))
@@ -257,12 +246,8 @@ void ROSAGVPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
   this->dataPtr->model = _parent;
 
-  this->dataPtr->rosService = this->dataPtr->rosnode->advertiseService(agvControlTopic,
+  this->dataPtr->rosService = this->dataPtr->rosnode->advertiseService(agvControlService,
       &ROSAGVPlugin::OnCommand, this);
-
-  // Client for submitting trays for inspection.
-  this->dataPtr->rosSubmitTrayClient =
-    this->dataPtr->rosnode->serviceClient<osrf_gear::SubmitTray>(submitTrayTopic);
 
   // Client for clearing trays.
   this->dataPtr->rosClearTrayClient =
@@ -304,23 +289,6 @@ void ROSAGVPlugin::OnUpdate(const common::UpdateInfo & _info)
       lock_msg.set_data("lock");
       this->dataPtr->lockTrayModelsPub->Publish(lock_msg);
 
-      // Make a service call to submit the tray for inspection.
-      // Do this before animating and clearing the AGV in case the assigned
-      // goal changes as the AGV is moving.
-      if (!this->dataPtr->rosSubmitTrayClient.exists())
-      {
-        this->dataPtr->rosSubmitTrayClient.waitForExistence();
-      }
-      osrf_gear::SubmitTray submit_srv;
-      submit_srv.request.tray_id = this->dataPtr->trayLinkName;
-      submit_srv.request.kit_type = this->dataPtr->kitType;
-      this->dataPtr->rosSubmitTrayClient.call(submit_srv);
-      this->dataPtr->inspectionResult = -1;
-      if (submit_srv.response.success)
-      {
-        this->dataPtr->inspectionResult = submit_srv.response.inspection_result;
-      }
-
       // Trigger the tray delivery animation
       this->dataPtr->deliverTrayAnimation->SetTime(0);
       this->dataPtr->model->SetAnimation(this->dataPtr->deliverTrayAnimation);
@@ -348,16 +316,6 @@ void ROSAGVPlugin::OnUpdate(const common::UpdateInfo & _info)
   }
   if (this->dataPtr->currentState == "delivered")
   {
-    // Report the result of the previously-performed tray inspection.
-    if (this->dataPtr->inspectionResult < 0)
-    {
-      ROS_ERROR_STREAM("Failed to submit tray for inspection.");
-    }
-    else
-    {
-      ROS_INFO_STREAM("Result of inspection: " << this->dataPtr->inspectionResult);
-    }
-
     // Make a service call to clear the tray.
     if (!this->dataPtr->rosClearTrayClient.exists())
     {
@@ -399,18 +357,18 @@ void ROSAGVPlugin::OnUpdate(const common::UpdateInfo & _info)
 
 /////////////////////////////////////////////////
 bool ROSAGVPlugin::OnCommand(
-  osrf_gear::AGVControl::Request &_req,
-  osrf_gear::AGVControl::Response &_res)
+  std_srvs::Trigger::Request &,
+  std_srvs::Trigger::Response &_resp)
 {
   if (this->dataPtr->currentState != "ready_to_deliver")
   {
-    ROS_ERROR_STREAM("AGV not successfully triggered as it was not ready to deliver trays.");
-    _res.success = false;
+    _resp.message = "AGV not successfully triggered as it was not ready to deliver trays.";
+    ROS_ERROR_STREAM(_resp.message);
+    _resp.success = false;
     return true;
   }
-  ROS_ERROR_STREAM("[INFO] AGV '" << this->dataPtr->agvName << "' delivery triggered for kit: " << _req.kit_type);
-  this->dataPtr->kitType = _req.kit_type;
+  ROS_ERROR_STREAM("[INFO] AGV '" << this->dataPtr->agvName << "' delivery triggered");
   this->dataPtr->deliveryTriggered = true;
-  _res.success = true;
+  _resp.success = true;
   return true;
 }

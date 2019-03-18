@@ -25,12 +25,12 @@ topics:
 
   - topic: /tf
     type: tf2_msgs/TFMessage
-    num_publishers: 2
+    num_publishers: 4
     num_subscribers: -1
 
   - topic: /tf_static
     type: tf2_msgs/TFMessage
-    num_publishers: 1
+    num_publishers: 3
     num_subscribers: -1
 
 
@@ -40,11 +40,6 @@ topics:
     type: osrf_gear/Order
     num_publishers: 1
     num_subscribers: 0
-
-  - topic: /ariac/shipping_boxes
-    type: osrf_gear/ShippingBoxContents
-    num_publishers: 1
-    num_subscribers: 1
 
   - topic: /ariac/population/state
     type: osrf_gear/PopulationState
@@ -71,7 +66,12 @@ topics:
     num_publishers: 1
     num_subscribers: 0
 
-  - topic: /ariac/drone/state
+  - topic: /ariac/agv1/state
+    type: std_msgs/String
+    num_publishers: 1
+    num_subscribers: 0
+
+  - topic: /ariac/agv2/state
     type: std_msgs/String
     num_publishers: 1
     num_subscribers: 0
@@ -79,22 +79,42 @@ topics:
 
   #####################################
   # Arm + move_group
-  - topic: /ariac/arm/command
+  - topic: /ariac/arm1/arm/command
     type: trajectory_msgs/JointTrajectory
     num_publishers: 0
     num_subscribers: 1
 
-  - topic: /ariac/joint_states
+  - topic: /ariac/arm1/joint_states
     type: sensor_msgs/JointState
     num_publishers: 1
     num_subscribers: 1
 
-  - topic: /ariac/arm/state
+  - topic: /ariac/arm1/arm/state
     type: control_msgs/JointTrajectoryControllerState
     num_publishers: 1
     num_subscribers: 0
 
-  - topic: /ariac/gripper/state
+  - topic: /ariac/arm1/gripper/state
+    type: osrf_gear/VacuumGripperState
+    num_publishers: 1
+    num_subscribers: 1
+
+  - topic: /ariac/arm2/arm/command
+    type: trajectory_msgs/JointTrajectory
+    num_publishers: 0
+    num_subscribers: 1
+
+  - topic: /ariac/arm2/joint_states
+    type: sensor_msgs/JointState
+    num_publishers: 1
+    num_subscribers: 1
+
+  - topic: /ariac/arm2/arm/state
+    type: control_msgs/JointTrajectoryControllerState
+    num_publishers: 1
+    num_subscribers: 0
+
+  - topic: /ariac/arm2/gripper/state
     type: osrf_gear/VacuumGripperState
     num_publishers: 1
     num_subscribers: 1
@@ -132,6 +152,11 @@ topics:
     num_publishers: 1
     num_subscribers: 0
 
+  - topic: /ariac/logical_camera_3
+    type: osrf_gear/LogicalCameraImage
+    num_publishers: 1
+    num_subscribers: 0
+
   - topic: /ariac/proximity_sensor_1
     type: sensor_msgs/Range
     num_publishers: 1
@@ -147,19 +172,34 @@ services:
   - service: /ariac/start_competition
     type: std_srvs/Trigger
 
-  - service: /ariac/drone
-    type: osrf_gear/DroneControl
+  - service: /ariac/agv1
+    type: osrf_gear/AGVControl
+
+  - service: /ariac/agv2
+    type: osrf_gear/AGVControl
 
   - service: /ariac/end_competition
     type: std_srvs/Trigger
 
-  - service: /ariac/submit_shipment
-    type: osrf_gear/SubmitShipment
+  - service: /ariac/submit_tray
+    type: osrf_gear/SubmitTray
 
-  - service: /ariac/conveyor/control
-    type: osrf_gear/ConveyorBeltControl
+  - service: /ariac/agv1/animate
+    type: std_srvs/Trigger
+
+  - service: /ariac/agv2/animate
+    type: std_srvs/Trigger
+
+  - service: /ariac/kit_tray_1/get_content
+    type: osrf_gear/DetectShipment
+
+  - service: /ariac/kit_tray_2/get_content
+    type: osrf_gear/DetectShipment
 
   #####################################
   # Arm
-  - service: /ariac/gripper/control
+  - service: /ariac/arm1/gripper/control
+    type: osrf_gear/VacuumGripperControl
+
+  - service: /ariac/arm2/gripper/control
     type: osrf_gear/VacuumGripperControl

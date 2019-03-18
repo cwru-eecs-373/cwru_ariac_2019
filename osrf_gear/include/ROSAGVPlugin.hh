@@ -25,7 +25,8 @@
 
 // ROS
 #include <ros/ros.h>
-#include <osrf_gear/AGVControl.h>
+#include <std_srvs/Trigger.h>
+
 
 namespace gazebo
 {
@@ -48,8 +49,8 @@ namespace gazebo
 
     /// \brief Receives requests on the AGV's control topic.
     public: bool OnCommand(
-      osrf_gear::AGVControl::Request &_req,
-      osrf_gear::AGVControl::Response &_res);
+      std_srvs::Trigger::Request &_req,
+      std_srvs::Trigger::Response &_res);
 
     /// \brief Called when world update events are received
     /// \param[in] _info Update information provided by the server.

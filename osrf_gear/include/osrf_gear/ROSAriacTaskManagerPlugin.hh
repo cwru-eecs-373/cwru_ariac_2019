@@ -21,8 +21,10 @@
 #include <memory>
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/physics/PhysicsTypes.hh>
+#include <osrf_gear/AGVControl.h>
+#include <osrf_gear/DetectedShipment.h>
 #include <osrf_gear/GetMaterialLocations.h>
-#include <osrf_gear/SubmitTray.h>
+#include <osrf_gear/SubmitShipment.h>
 #include <sdf/sdf.hh>
 #include <std_msgs/String.h>
 #include <std_srvs/Trigger.h>
@@ -120,7 +122,7 @@ namespace gazebo
     protected: void OnUpdate();
 
     /// \brief Decide whether to announce a new order.
-    protected: void ProcessOrdersToAnnounce();
+    protected: void ProcessOrdersToAnnounce(gazebo::common::Time simTime);
 
     /// \brief Enable control of the conveyor belt.
     protected: void EnableConveyorBeltControl();
@@ -143,18 +145,22 @@ namespace gazebo
       std_srvs::Trigger::Request & req, std_srvs::Trigger::Response & res);
 
     /// \brief Callback for when a shipment is submitted for inspection.
-    public: bool HandleSubmitTrayService(
-      ros::ServiceEvent<osrf_gear::SubmitTray::Request, osrf_gear::SubmitTray::Response> & event);
+    public: bool HandleSubmitShipmentService(
+      ros::ServiceEvent<osrf_gear::SubmitShipment::Request, osrf_gear::SubmitShipment::Response> & event);
 
     /// \brief Callback for when a query is made for material locations.
     public: bool HandleGetMaterialLocationsService(
       osrf_gear::GetMaterialLocations::Request & req, osrf_gear::GetMaterialLocations::Response & res);
 
+    /// \brief Callback for when a query is made for material locations.
+    public: bool HandleAGVDeliverService(
+      osrf_gear::AGVControl::Request & req, osrf_gear::AGVControl::Response & res, int agv_id);
+
+    /// \brief Callback when a tray publishes it's content
+    public: void OnShipmentContent(osrf_gear::DetectedShipment::ConstPtr shipment);
+
     /// \brief Announce an order to participants.
     protected: void AnnounceOrder(const ariac::Order & order);
-
-    /// \brief Assign an order to be monitored by the scorer.
-    protected: void AssignOrder(const ariac::Order & order);
 
     /// \brief Stop scoring the current order and assign the next order on stack.
     protected: void StopCurrentOrder();
