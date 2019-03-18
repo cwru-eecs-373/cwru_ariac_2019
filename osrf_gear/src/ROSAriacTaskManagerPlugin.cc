@@ -852,14 +852,13 @@ void ROSAriacTaskManagerPlugin::ProcessSensorBlackout()
   {
     // Count total products in all boxes.
     int totalProducts = 0;
-    /*
-    for (const auto & shippingBox : this->dataPtr->ariacScorer.GetShippingBoxes())
+    for (auto & cpair: this->dataPtr->shipmentContents)
     {
-      totalProducts += shippingBox.currentShipment.products.size();
+      totalProducts += cpair.second->products.size();
     }
     if (totalProducts >= this->dataPtr->sensorBlackoutProductCount)
     {
-      gzdbg << "Triggering sensor blackout because " << totalProducts << " products detected." << std::endl;
+      ROS_INFO_STREAM("Triggering sensor blackout because " << totalProducts << " products detected.");
       gazebo::msgs::GzString activateMsg;
       activateMsg.set_data("deactivate");
       this->dataPtr->sensorBlackoutControlPub->Publish(activateMsg);
@@ -867,7 +866,6 @@ void ROSAriacTaskManagerPlugin::ProcessSensorBlackout()
       this->dataPtr->sensorBlackoutStartTime = currentSimTime;
       this->dataPtr->sensorBlackoutInProgress = true;
     }
-    */
   }
   if (this->dataPtr->sensorBlackoutInProgress)
   {
