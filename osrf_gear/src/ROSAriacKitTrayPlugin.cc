@@ -82,6 +82,10 @@ void KitTrayPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     "/ariac/trays", 1000, boost::bind(&KitTrayPlugin::OnSubscriberConnect, this, _1));
   this->publishingEnabled = true;
 
+  this->tf_frame_name = "kit_tray_frame";
+  if (_sdf->HasElement("tf_frame_name"))
+    this->tf_frame_name = _sdf->Get<std::string>("tf_frame_name");
+
   // ROS service for clearing the tray
   std::string clearServiceName = "clear";
   if (_sdf->HasElement("clear_tray_service_name"))
@@ -109,7 +113,7 @@ void KitTrayPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 }
 
 /////////////////////////////////////////////////
-void KitTrayPlugin::OnUpdate(const common::UpdateInfo &/*_info*/)
+void KitTrayPlugin::OnUpdate(const common::UpdateInfo & _info)
 {
   // If we're using a custom update rate value we have to check if it's time to
   // update the plugin or not.
@@ -134,6 +138,8 @@ void KitTrayPlugin::OnUpdate(const common::UpdateInfo &/*_info*/)
   {
     this->PublishKitMsg();
   }
+
+  this->PublishTFTransform(_info.simTime);
 }
 
 /////////////////////////////////////////////////
@@ -349,4 +355,22 @@ bool KitTrayPlugin::HandleGetContentService(
 
   response.shipment = kitTrayMsg;
   return true;
+}
+
+void KitTrayPlugin::PublishTFTransform(const common::Time sim_time)
+{
+  ignition::math::Pose3d objectPose = this->model->GetLink()->WorldPose();
+  geometry_msgs::TransformStamped tfStamped;
+  tfStamped.header.stamp = ros::Time(sim_time.sec, sim_time.nsec);
+  tfStamped.header.frame_id = "world";
+  tfStamped.child_frame_id = this->tf_frame_name;
+  tfStamped.transform.translation.x = objectPose.Pos().X();
+  tfStamped.transform.translation.y = objectPose.Pos().Y();
+  tfStamped.transform.translation.z = objectPose.Pos().Z();
+  tfStamped.transform.rotation.x = objectPose.Rot().X();
+  tfStamped.transform.rotation.y = objectPose.Rot().Y();
+  tfStamped.transform.rotation.z = objectPose.Rot().Z();
+  tfStamped.transform.rotation.w = objectPose.Rot().W();
+
+  tf_broadcaster.sendTransform(tfStamped);
 }

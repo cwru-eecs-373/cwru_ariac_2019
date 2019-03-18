@@ -25,6 +25,7 @@
 
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/msgs/msgs.hh>
@@ -86,6 +87,8 @@ namespace gazebo
     protected: bool HandleGetContentService(
       ros::ServiceEvent<osrf_gear::DetectShipment::Request, osrf_gear::DetectShipment::Response> & event);
 
+    protected: void PublishTFTransform(const common::Time sim_time);
+
     /// \brief Kit which is currently on the tray
     protected: ariac::Kit currentKit;
 
@@ -116,6 +119,12 @@ namespace gazebo
 
     /// \brief ROS service to get the contents of the tray
     public: ros::ServiceServer trayContentsServer;
+
+    /// \brief Broadcaster for the tf frame of the tray
+    public: tf2_ros::TransformBroadcaster tf_broadcaster;
+
+    /// \brief Name of the tf transform
+    public: std::string tf_frame_name;
 
     /// \brief Parts to ignore (will be published as faulty in tray msgs)
     /// The namespace of the part (e.g. bin7) is ignored.

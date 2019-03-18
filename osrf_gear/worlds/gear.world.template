@@ -236,6 +236,7 @@ expand_snippet('laser_profiler.sdf.template')
         </include>
         <plugin name="kit_tray_plugin" filename="libROSAriacKitTrayPlugin.so">
           <contact_sensor_name>kit_tray_contact</contact_sensor_name>
+          <tf_frame_name>kit_tray_@(str(agv_id))</tf_frame_name>
           <clear_tray_service_name>/ariac/kit_tray_@(str(agv_id))/clear_tray</clear_tray_service_name>
           <lock_models_service_name>/ariac/kit_tray_@(str(agv_id))/lock_models</lock_models_service_name>
           <get_content_service_name>/ariac/kit_tray_@(str(agv_id))/get_content</get_content_service_name>
