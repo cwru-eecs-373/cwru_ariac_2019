@@ -76,6 +76,11 @@ topics:
     num_publishers: 1
     num_subscribers: 0
 
+  - topic: /ariac/trays
+    type: osrf_gear/DetectedShipment
+    num_publishers: 1
+    num_subscribers: 1
+
 
   #####################################
   # Arm + move_group
@@ -97,7 +102,7 @@ topics:
   - topic: /ariac/arm1/gripper/state
     type: osrf_gear/VacuumGripperState
     num_publishers: 1
-    num_subscribers: 1
+    num_subscribers: 0
 
   - topic: /ariac/arm2/arm/command
     type: trajectory_msgs/JointTrajectory
@@ -117,7 +122,7 @@ topics:
   - topic: /ariac/arm2/gripper/state
     type: osrf_gear/VacuumGripperState
     num_publishers: 1
-    num_subscribers: 1
+    num_subscribers: 0
 
 
   #####################################
@@ -181,8 +186,8 @@ services:
   - service: /ariac/end_competition
     type: std_srvs/Trigger
 
-  - service: /ariac/submit_tray
-    type: osrf_gear/SubmitTray
+  - service: /ariac/submit_shipment
+    type: osrf_gear/SubmitShipment
 
   - service: /ariac/agv1/animate
     type: std_srvs/Trigger
