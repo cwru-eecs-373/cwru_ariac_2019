@@ -18,23 +18,18 @@ class GripperBinDropTester(GripperTester):
         ariac_example.connect_callbacks(self.comp_class)
         time.sleep(1.0)
 
-        # Pre-defined initial pose because sometimes the arm starts "droopy"
-        self._send_arm_to_initial_pose()
+        self._send_arms_to_initial_pose()
 
-        # Pre-defined pose that puts the gripper in contact with a product.
-        self._send_arm_to_product()
+        self._send_arm1_to_product()
 
-        # Enable the gripper so that it picks up the product.
-        self._test_enable_gripper()
+        self._enable_gripper(arm=1)
+        time.sleep(2.0)
+        self.assertTrue(self.comp_class.arm_1_current_gripper_state.enabled)
+        self.assertTrue(self.comp_class.arm_1_current_gripper_state.attached)
 
-        # Move the product over the shipping box using a pre-defined sequence of poses.
-        self._send_arm_to_shipping_box()
-        self.assertTrue(
-            self.comp_class.current_gripper_state.enabled, 'Gripper no longer enabled')
-        self.assertFalse(
-            self.comp_class.current_gripper_state.attached, 'Product is still attached')
-
-        time.sleep(1.0)
+        self._send_arm1_to_tray()
+        self.assertTrue(self.comp_class.arm_1_current_gripper_state.enabled)
+        self.assertFalse(self.comp_class.arm_1_current_gripper_state.attached)
 
 
 if __name__ == '__main__':
