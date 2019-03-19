@@ -22,51 +22,61 @@ class GripperTester(ExampleNodeTester):
         self._send_arms_to_initial_pose()
 
         # Pre-defined pose that puts the gripper in contact with a product.
-        self._send_arm_to_product()
+        self._send_arm1_to_product()
+        self._send_arm2_to_product()
 
         # Enable the gripper so that it picks up the product.
         self._test_enable_gripper()
 
-        self._send_arm_to_tray()
-        self.assertTrue(
-            self.comp_class.arm_1_current_gripper_state.enabled, 'Gripper no longer enabled')
-        self.assertTrue(
-            self.comp_class.arm_1_current_gripper_state.attached, 'Product no longer attached')
+        self._send_arm1_to_tray()
+        self._send_arm2_to_tray()
 
         # Disable the gripper so that it drops the product.
         self._test_disable_gripper()
 
-        time.sleep(1.0)
-
     def _test_enable_gripper(self):
-        success = self._enable_gripper()
-        self.assertTrue(success, 'Gripper not successfully controlled')
-        time.sleep(1.0)
-        self.assertTrue(
-            self.comp_class.arm_1_current_gripper_state.enabled, 'Gripper not successfully enabled')
-        self.assertTrue(
-            self.comp_class.arm_1_current_gripper_state.attached, 'Product not successfully attached')
+        self.assertFalse(self.comp_class.arm_1_current_gripper_state.enabled)
+        self.assertFalse(self.comp_class.arm_1_current_gripper_state.attached)
+        self.assertFalse(self.comp_class.arm_2_current_gripper_state.enabled)
+        self.assertFalse(self.comp_class.arm_2_current_gripper_state.attached)
 
-    def _enable_gripper(self):
-        success = ariac_example.control_gripper(True, arm=1)
+        self.assertTrue(self._enable_gripper(arm=1))
+        time.sleep(2.0)
+        self.assertTrue(self.comp_class.arm_1_current_gripper_state.enabled)
+        self.assertTrue(self.comp_class.arm_1_current_gripper_state.attached)
+
+        self.assertTrue(self._enable_gripper(arm=2))
+        time.sleep(2.0)
+        self.assertTrue(self.comp_class.arm_2_current_gripper_state.enabled)
+        self.assertTrue(self.comp_class.arm_2_current_gripper_state.attached)
+
+    def _enable_gripper(self, arm):
+        success = ariac_example.control_gripper(True, arm=arm)
         time.sleep(0.5)
         return success
 
     def _test_disable_gripper(self):
-        success = self._disable_gripper()
-        self.assertTrue(success, 'Gripper not successfully controlled')
-        time.sleep(1.0)
-        self.assertFalse(
-            self.comp_class.arm_1_current_gripper_state.enabled, 'Gripper not successfully disabled')
-        self.assertFalse(
-            self.comp_class.arm_1_current_gripper_state.attached, 'Product not successfully dettached')
+        self.assertTrue(self.comp_class.arm_1_current_gripper_state.enabled)
+        self.assertTrue(self.comp_class.arm_1_current_gripper_state.attached)
+        self.assertTrue(self.comp_class.arm_2_current_gripper_state.enabled)
+        self.assertTrue(self.comp_class.arm_2_current_gripper_state.attached)
 
-    def _disable_gripper(self):
-        success = ariac_example.control_gripper(False, arm=1)
+        self.assertTrue(self._disable_gripper(arm=1))
+        time.sleep(2.0)
+        self.assertFalse(self.comp_class.arm_1_current_gripper_state.enabled)
+        self.assertFalse(self.comp_class.arm_1_current_gripper_state.attached)
+
+        self.assertTrue(self._disable_gripper(arm=2))
+        time.sleep(2.0)
+        self.assertFalse(self.comp_class.arm_2_current_gripper_state.enabled)
+        self.assertFalse(self.comp_class.arm_2_current_gripper_state.attached)
+
+    def _disable_gripper(self, arm):
+        success = ariac_example.control_gripper(False, arm=arm)
         time.sleep(0.5)
         return success
 
-    def _send_arm_to_product(self):
+    def _send_arm1_to_product(self):
         trajectory = [
             [3.14, -1.57, 2.14, 3.24, -1.59, 0.126, 0.0],
             [3.45, -0.75, 2.14, 3.24, -1.59, 0.126, 0.0],
@@ -76,7 +86,18 @@ class GripperTester(ExampleNodeTester):
             self.comp_class.send_arm1_to_state(positions)
             time.sleep(1.5)
 
-    def _send_arm_to_tray(self):
+    def _send_arm2_to_product(self):
+        trajectory = [
+            [0.0, -2.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [3.14, -2.0, 2.14, 3.27, -1.51, 0.0, 0.0],
+            [2.76, -0.6, 1.88, 3.27, -1.51, 0.0, 0.24],
+            [2.76, -0.46, 1.88, 3.27, -1.51, 0.0, 0.24],
+        ]
+        for positions in trajectory:
+            self.comp_class.send_arm2_to_state(positions)
+            time.sleep(1.5)
+
+    def _send_arm1_to_tray(self):
         trajectory = [
             [3.14, -1.57, 2.14, 3.27, -1.51, 0.0, 0.0],
             [1.85, 0, -0.38, 1.57, -1.51, 0.0, 1.0],
@@ -85,6 +106,17 @@ class GripperTester(ExampleNodeTester):
         ]
         for positions in trajectory:
             self.comp_class.send_arm1_to_state(positions)
+            time.sleep(1.0)
+
+    def _send_arm2_to_tray(self):
+        trajectory = [
+            [2.76, -0.47, 1.88, 3.27, -1.51, 0.0, 0.24],
+            [2.76, -1.13, 1.88, 3.27, -1.51, 0.0, 0.24],
+            [4.27, -1.13, 1.88, 3.27, -1.51, 0.0, -1.04],
+            [4.52, -0.50, 1.51, 3.64, -1.51, 0.0, -1.04],
+        ]
+        for positions in trajectory:
+            self.comp_class.send_arm2_to_state(positions)
             time.sleep(1.0)
 
 

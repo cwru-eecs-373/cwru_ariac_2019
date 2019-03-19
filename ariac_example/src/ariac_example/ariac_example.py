@@ -160,10 +160,10 @@ def connect_callbacks(comp_class):
         "/ariac/arm1/joint_states", JointState, comp_class.arm_1_joint_state_callback)
     joint_state_sub = rospy.Subscriber(
         "/ariac/arm2/joint_states", JointState, comp_class.arm_2_joint_state_callback)
-    gripper_state_sub = rospy.Subscriber(
+    gripper1_state_sub = rospy.Subscriber(
         "/ariac/arm1/gripper/state", VacuumGripperState, comp_class.arm_1_gripper_state_callback)
-    gripper_state_sub = rospy.Subscriber(
-        "/ariac/arm2/gripper/state", VacuumGripperState, comp_class.arm_1_gripper_state_callback)
+    gripper2_state_sub = rospy.Subscriber(
+        "/ariac/arm2/gripper/state", VacuumGripperState, comp_class.arm_2_gripper_state_callback)
 
 
 def control_agv(shipment_type, agv_num):
