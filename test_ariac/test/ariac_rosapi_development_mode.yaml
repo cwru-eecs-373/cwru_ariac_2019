@@ -28,5 +28,5 @@ services:
   - service: /ariac/kit_tray_2/clear_tray
     type: std_srvs/Trigger
 
-  - service: /ariac/submit_tray
-    type: osrf_gear/SubmitTray
+  - service: /ariac/submit_shipment
+    type: osrf_gear/SubmitShipment
