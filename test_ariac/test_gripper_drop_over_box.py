@@ -26,21 +26,18 @@ class GripperBoxDropTester(GripperTester, TfTester):
         time.sleep(1.0)
         self.prepare_tf()
 
-        # Pre-defined initial pose because sometimes the arm starts "droopy"
-        self._send_arm_to_initial_pose()
+        self._send_arms_to_initial_pose()
 
-        # Pre-defined pose that puts the gripper in contact with a product.
-        self._send_arm_to_product()
+        self._send_arm1_to_product()
 
-        # Enable the gripper so that it picks up the product.
-        self._test_enable_gripper()
+        self._enable_gripper(arm=1)
+        time.sleep(2.0)
+        self.assertTrue(self.comp_class.arm_1_current_gripper_state.enabled)
+        self.assertTrue(self.comp_class.arm_1_current_gripper_state.attached)
 
-        # Move the product over the shipping box using a pre-defined sequence of poses.
-        self._send_arm_to_shipping_box()
-        self.assertTrue(
-            self.comp_class.current_gripper_state.enabled, 'Gripper no longer enabled')
-        self.assertFalse(
-            self.comp_class.current_gripper_state.attached, 'Product is still attached')
+        self._send_arm1_to_tray()
+        self.assertTrue(self.comp_class.arm_1_current_gripper_state.enabled)
+        self.assertFalse(self.comp_class.arm_1_current_gripper_state.attached)
 
         self._test_dropped_product_pose()
 
@@ -50,8 +47,8 @@ class GripperBoxDropTester(GripperTester, TfTester):
         self._test_pose(
             [0.15, 0.15, 0.0],
             tf.transformations.quaternion_from_euler(0, 0, 0.2),
-            self.camera_above_box0 + '_gear_part_3_frame',
-            self.camera_above_box0 + '_shipping_box_0_frame'
+            self.camera_frame + '_gasket_part_5_frame',
+            'kit_tray_1'
         )
 
 
