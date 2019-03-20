@@ -364,9 +364,11 @@ expand_snippet('laser_profiler.sdf.template')
 @{
 if '_update' in order_name:
     order_name = order_name.split('_update')[0]
+destination = order['destinations'][shipment_index]
 }@
         <shipment>
           <shipment_type>@(order_name)_shipment_@(shipment_index)</shipment_type>
+          <destination>@(destination)</destination>
 @[for product in order['products']]@
           <product>
             <type>@(product.type)</type>

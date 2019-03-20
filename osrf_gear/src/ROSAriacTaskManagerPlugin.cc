@@ -205,6 +205,7 @@ static void fillOrderMsg(const ariac::Order &_order,
   {
     osrf_gear::Shipment msgShipment;
     msgShipment.shipment_type = shipment.shipmentType;
+    msgShipment.agv_id = shipment.agv_id;
     for (const auto &obj : shipment.products)
     {
       osrf_gear::Product msgObj;
@@ -409,6 +410,13 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
       }
 
       ariac::Shipment shipment;
+
+      // TODO(sloretz) destination AGV
+      shipment.agv_id = "any";
+      if (shipmentElem->HasElement("destination"))
+      {
+        shipment.agv_id = shipmentElem->Get<std::string>("destination");
+      }
 
       // Parse the shipment type.
       ariac::ShipmentType_t shipmentType;

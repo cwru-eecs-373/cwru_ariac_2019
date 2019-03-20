@@ -45,6 +45,7 @@ set(rostests
   test_scoring/ariac_scoring_faulty_parts.test
   test_scoring/ariac_scoring_faulty_parts_randomized.test
   test_scoring/ariac_scoring_arm_collision.test
+  test_scoring/ariac_scoring_wrong_agv.test
 )
 
 foreach(rostest ${rostests})

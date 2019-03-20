@@ -452,6 +452,7 @@ def create_drops_info(drops_dict):
 
 def create_order_info(name, order_dict):
     shipment_count = get_field_with_default(order_dict, 'shipment_count', 1)
+    destinations = get_field_with_default(order_dict, 'destinations', ["any"] * shipment_count)
     announcement_condition = get_required_field(name, order_dict, 'announcement_condition')
     announcement_condition_value = get_required_field(
         name, order_dict, 'announcement_condition_value')
@@ -464,6 +465,7 @@ def create_order_info(name, order_dict):
         'announcement_condition_value': announcement_condition_value,
         'products': products,
         'shipment_count': shipment_count,
+        'destinations': destinations
     }
 
 

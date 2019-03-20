@@ -50,6 +50,7 @@ namespace ariac
       _out << "Product presence score: [" << _obj.productPresence << "]" << std::endl;
       _out << "All products bonus: [" << _obj.allProductsBonus << "]" << std::endl;
       _out << "Product pose score: [" << _obj.productPose << "]" << std::endl;
+      _out << "Delivered to correct agv: [" << (_obj.correctAGV ? "true" : "false") << std::endl;
       _out << "</shipment_score>" << std::endl;
       return _out;
     }
@@ -59,11 +60,16 @@ namespace ariac
             double productPose = 0.0;
             bool isComplete = false;  // All products present
             bool isSubmitted = false;  // the shipment has been submitted for evaluation
+            bool correctAGV = false;  // The shipment was submitted to the desired AGV
             gazebo::common::Time submit_time;  // sim time when shipment submitted
 
             /// \brief Calculate the total score.
             double total() const
             {
+              if (!correctAGV)
+              {
+                return 0.0;
+              }
               return productPresence + allProductsBonus + productPose;
             }
   };
@@ -262,7 +268,7 @@ namespace ariac
     public: friend std::ostream &operator<<(std::ostream &_out,
                                             const Shipment &_shipment)
     {
-      _out << "<shipment type='" << _shipment.shipmentType << "'>";
+      _out << "<shipment type='" << _shipment.shipmentType << "' agv='" << _shipment.agv_id << "'>";
       for (const auto & obj : _shipment.products)
         _out << std::endl << obj;
       _out << std::endl << "</shipment>" << std::endl;
@@ -272,6 +278,9 @@ namespace ariac
 
     /// \brief The type of the shipment.
     public: ShipmentType_t shipmentType;
+
+    /// \brief which AGV this shipment should be put into "agv1", "agv2", or "any"
+    public: std::string agv_id;
 
     /// \brief A shipment is composed of multiple products.
     public: std::vector<Product> products;
