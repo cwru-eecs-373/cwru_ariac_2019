@@ -224,6 +224,24 @@ ariac::ShipmentScore AriacScorer::GetShipmentScore(
   scorer.productPresence = 0;
   scorer.allProductsBonus = 0;
   scorer.productPose = 0;
+  scorer.correctAGV = false;
+
+  if ("any" == desired_shipment.agv_id)
+  {
+    scorer.correctAGV = true;
+  }
+  else if ("agv1" == desired_shipment.agv_id)
+  {
+    scorer.correctAGV = "agv1::kit_tray_1::kit_tray_1::tray" == actual_shipment.destination_id;
+  }
+  else if ("agv2" == desired_shipment.agv_id)
+  {
+    scorer.correctAGV = "agv2::kit_tray_2::kit_tray_2::tray" == actual_shipment.destination_id;
+  }
+  else
+  {
+    gzerr << "[ARIAC ERROR] desired shipment destination invalid:" << desired_shipment.agv_id << "\n";
+  }
 
   // Separate faulty and non-faulty products
   std::vector<osrf_gear::DetectedProduct> non_faulty_products;

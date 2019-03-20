@@ -80,6 +80,7 @@ TEST(TestAriacScorer, order_with_no_shipments)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -97,6 +98,7 @@ TEST(TestAriacScorer, updated_order_with_no_shipments)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -118,6 +120,7 @@ TEST(TestAriacScorer, order_with_one_empty_shipment)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -144,6 +147,7 @@ TEST(TestAriacScorer, order_with_one_unrelated_shipment)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -172,6 +176,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_perfectly)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -193,6 +198,44 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_perfectly)
   EXPECT_DOUBLE_EQ((shipment_time - start_time).Double(), score.orderScores["order_0"].timeTaken);
 }
 
+TEST(TestAriacScorer, order_with_one_shipment_fulfilled_perfectly_wrong_agv)
+{
+  AriacScorer scorer;
+
+  Order order;
+  order.order_id = "order_0";
+  order.shipments.emplace_back();
+  order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "agv2";
+  order.shipments.back().products.emplace_back();
+  order.shipments.back().products.back().type = "gear_part";
+  order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
+  order.shipments.back().shipment_type = "order_0_shipment_1";
+  order.shipments.back().agv_id = "agv1";
+  order.shipments.back().products.emplace_back();
+  order.shipments.back().products.back().type = "gear_part";
+  order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
+  Time start_time(123, 456);
+
+  scorer.NotifyOrderStarted(start_time, order);
+
+  Time shipment_time(789, 123);
+  DetectedShipment shipment;
+  shipment.destination_id = "agv1::kit_tray_1::kit_tray_1::tray";
+  shipment.products.emplace_back();
+  shipment.products.back().is_faulty = false;
+  shipment.products.back().type = order.shipments.back().products.back().type;
+  shipment.products.back().pose = order.shipments.back().products.back().pose;
+  scorer.NotifyShipmentReceived(shipment_time, "order_0_shipment_0", shipment);
+  auto score = scorer.GetGameScore();
+  EXPECT_DOUBLE_EQ(0.0, score.total()) << score;
+
+  scorer.NotifyShipmentReceived(shipment_time, "order_0_shipment_1", shipment);
+  score = scorer.GetGameScore();
+  EXPECT_DOUBLE_EQ(make_shipment_score(1, 1, ALL_PRODUCTS), score.total()) << score;
+  EXPECT_TRUE(score.orderScores["order_0"].isComplete());
+}
+
 TEST(TestAriacScorer, order_with_one_shipment_faulty_part)
 {
   AriacScorer scorer;
@@ -201,6 +244,7 @@ TEST(TestAriacScorer, order_with_one_shipment_faulty_part)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -228,6 +272,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_poor_translation)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -257,6 +302,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_poor_orientation)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -284,6 +330,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_missing_product)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -314,6 +361,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_extra_product_different_
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -344,6 +392,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_extra_product_same_type)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -374,6 +423,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_mismatched_product)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -401,6 +451,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_flipped_product)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -428,11 +479,13 @@ TEST(TestAriacScorer, order_with_two_shipments_perfect)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_1";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "pulley_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -473,11 +526,13 @@ TEST(TestAriacScorer, order_with_two_shipments_first_perfect)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_1";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "pulley_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -518,11 +573,13 @@ TEST(TestAriacScorer, order_with_two_shipments_first_before_second)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_1";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "pulley_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -558,11 +615,13 @@ TEST(TestAriacScorer, order_with_two_shipments_second_before_first)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_1";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "pulley_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -598,6 +657,7 @@ TEST(TestAriacScorer, order_with_one_shipment_multiple_products_perfect)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -634,6 +694,7 @@ TEST(TestAriacScorer, order_with_one_shipment_multiple_products_one_wrong_transl
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -671,6 +732,7 @@ TEST(TestAriacScorer, order_with_one_shipment_multiple_products_one_wrong_orient
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -711,6 +773,7 @@ TEST(TestAriacScorer, order_with_many_shipments_many_parts_close_enough)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -722,6 +785,7 @@ TEST(TestAriacScorer, order_with_many_shipments_many_parts_close_enough)
   order.shipments.back().products.back().pose = make_pose(2, 0, 1, 0, 0, 0);
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_1";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "piston_part";
   order.shipments.back().products.back().pose = make_pose(1, 2, 3, 1, 0, 5);
@@ -770,6 +834,7 @@ TEST(TestAriacScorer, order_with_many_shipments_mixed_success)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -781,6 +846,7 @@ TEST(TestAriacScorer, order_with_many_shipments_mixed_success)
   order.shipments.back().products.back().pose = make_pose(2, 0, 1, 0, 0, 0);
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_1";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "piston_part";
   order.shipments.back().products.back().pose = make_pose(1, 2, 3, 1, 0, 5);
@@ -846,6 +912,7 @@ TEST(TestAriacScorer, two_orders_perfect)
     order.order_id = "order_0";
     order.shipments.emplace_back();
     order.shipments.back().shipment_type = "order_0_shipment_0";
+    order.shipments.back().agv_id = "any";
     order.shipments.back().products.emplace_back();
     order.shipments.back().products.back().type = "gear_part";
     order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -857,6 +924,7 @@ TEST(TestAriacScorer, two_orders_perfect)
     order.order_id = "order_1";
     order.shipments.emplace_back();
     order.shipments.back().shipment_type = "order_1_shipment_0";
+    order.shipments.back().agv_id = "any";
     order.shipments.back().products.emplace_back();
     order.shipments.back().products.back().type = "pulley_part";
     order.shipments.back().products.back().pose = make_pose(0, 1, 0, 0, 0, 0);
@@ -900,6 +968,7 @@ TEST(TestAriacScorer, two_orders_first_ignored)
     order.order_id = "order_0";
     order.shipments.emplace_back();
     order.shipments.back().shipment_type = "order_0_shipment_0";
+    order.shipments.back().agv_id = "any";
     order.shipments.back().products.emplace_back();
     order.shipments.back().products.back().type = "gear_part";
     order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -911,6 +980,7 @@ TEST(TestAriacScorer, two_orders_first_ignored)
     order.order_id = "order_1";
     order.shipments.emplace_back();
     order.shipments.back().shipment_type = "order_1_shipment_0";
+    order.shipments.back().agv_id = "any";
     order.shipments.back().products.emplace_back();
     order.shipments.back().products.back().type = "pulley_part";
     order.shipments.back().products.back().pose = make_pose(0, 1, 0, 0, 0, 0);
@@ -944,6 +1014,7 @@ TEST(TestAriacScorer, two_orders_second_ignored)
     order.order_id = "order_0";
     order.shipments.emplace_back();
     order.shipments.back().shipment_type = "order_0_shipment_0";
+    order.shipments.back().agv_id = "any";
     order.shipments.back().products.emplace_back();
     order.shipments.back().products.back().type = "gear_part";
     order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -955,6 +1026,7 @@ TEST(TestAriacScorer, two_orders_second_ignored)
     order.order_id = "order_1";
     order.shipments.emplace_back();
     order.shipments.back().shipment_type = "order_1_shipment_0";
+    order.shipments.back().agv_id = "any";
     order.shipments.back().products.emplace_back();
     order.shipments.back().products.back().type = "pulley_part";
     order.shipments.back().products.back().pose = make_pose(0, 1, 0, 0, 0, 0);
@@ -988,6 +1060,7 @@ TEST(TestAriacScorer, order_fulfilled_but_arm_collision)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -1021,6 +1094,7 @@ TEST(TestAriacScorer, order_update_old_shipments_ignored_got_some_points)
     order.order_id = "order_0";
     order.shipments.emplace_back();
     order.shipments.back().shipment_type = "order_0_shipment_0";
+    order.shipments.back().agv_id = "any";
     order.shipments.back().products.emplace_back();
     order.shipments.back().products.back().type = "gear_part";
     order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -1053,6 +1127,7 @@ TEST(TestAriacScorer, order_update_old_shipments_ignored_got_some_points)
     order.order_id = "order_0_update_0";
     order.shipments.emplace_back();
     order.shipments.back().shipment_type = "order_0_shipment_0";
+    order.shipments.back().agv_id = "any";
     order.shipments.back().products.emplace_back();
     order.shipments.back().products.back().type = "pulley_part";
     order.shipments.back().products.back().pose = make_pose(0, 1, 0, 0, 0, 0);
@@ -1085,6 +1160,7 @@ TEST(TestAriacScorer, order_update_old_shipments_ignored_got_no_points)
     order.order_id = "order_0";
     order.shipments.emplace_back();
     order.shipments.back().shipment_type = "order_0_shipment_0";
+    order.shipments.back().agv_id = "any";
     order.shipments.back().products.emplace_back();
     order.shipments.back().products.back().type = "gear_part";
     order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -1142,6 +1218,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_perfectly_then_again_wit
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -1180,6 +1257,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_with_nothing_then_again_
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
@@ -1237,6 +1315,7 @@ TEST(TestAriacScorer, order_with_5_parts_permutated)
   order.order_id = "order_0";
   order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_0";
+  order.shipments.back().agv_id = "any";
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "piston_rod_part";
   order.shipments.back().products.back().pose = make_pose(0.1, -0.2, 0, 0, 0, 0);
