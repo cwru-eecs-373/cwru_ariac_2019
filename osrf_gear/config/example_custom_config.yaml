@@ -2,16 +2,14 @@
 options:
   insert_models_over_bins: true     # Whether or not to insert the models that are specified in models_over_bins
   spawn_extra_models: true          # Whether or not to spawn the models that are specified in models_to_spawn
-  fill_demo_shipment: true          # If true, the first shipping box will have products from the first order spawned
-                                    # directly in it once the competition starts (for testing purposes)
-  start_box_at_belt_center: true    # If true, the first shipping box will start in the middle of the belt
+  start_box_at_belt_center: true    # If true, the first tray will start in the middle of the belt
   gazebo_state_logging: true        # Whether or not to generate a gazebo state log
-  belt_population_cycles: 5         # How many of each shipping box to spawn on the belt beyond the first
+  belt_population_cycles: 5         # How many of each tray to spawn on the belt beyond the first
   model_type_aliases:               # Aliases for model types which can be used in the configuration file
     order_part1: piston_rod_part    # Wherever 'order_part1' is used in the configuration file, use 'piston_rod_part'
     order_part2: gear_part
     order_part3: pulley_part
-  visualize_drop_regions: false     # Whether or not to visualize drop regions (world frame only)
+  visualize_drop_regions: true     # Whether or not to visualize drop regions (world frame only)
 
 time_limit: 500                      # Maximum time allowed for the trial once started, in seconds
 random_seed: 1                       # Seed for the pseudo random number generator (used to randomize model names)
@@ -22,12 +20,15 @@ orders:
     announcement_condition: time     # Announce the order base on elapsed time
     announcement_condition_value: 0  # Time in seconds to wait before announcing the order
     shipment_count: 1                # How many of the same shipment are in the order
+    destinations: [agv1]             # Which agv the shipments must be delivered to
+                                     #  If specified it must be a list the same length as the shipment count
+                                     #  allowed values: agv1, agv2, any
     products:                        # List of products required to be in the kit
       part_0:
         type: order_part1            # Type of model required
         pose:
-          xyz: [0.1, -0.15, 0]       # Position required in the shipping box frame
-          rpy: [0, 0, 'pi/2']        # Orientation required in the shipping box frame
+          xyz: [0.1, -0.15, 0]       # Position required in the tray frame
+          rpy: [0, 0, 'pi/2']        # Orientation required in the tray frame
       part_1:
         type: order_part1
         pose:
@@ -47,6 +48,7 @@ orders:
     announcement_condition: wanted_products # Announce the order when the boxes contain products from this order
     announcement_condition_value: 2
     shipment_count: 1
+    destinations: [any]
     products:
       part_0:
         type: order_part3
@@ -80,27 +82,27 @@ faulty_products:
 
 # Models to be inserted in the bins
 models_over_bins:
-  bin3:                              # Name of the bin (bin1-bin5, as named in the environment simulation)
+  bin1:                              # Name of the bin (bin1-bin6, as named in the environment simulation)
     models:                          # List of models to insert
       gear_part:                     # Type of model to insert
-        xyz_start: [0, 0, 0]         # Origin of the first model to insert
-        xyz_end: [0.3, 0.37, 0]      # Origin of the last model to insert
+        xyz_start: [0.1, 0.1, 0]     # Origin of the first model to insert
+        xyz_end: [0.5, 0.5, 0]       # Origin of the last model to insert
         rpy: [0, 0, 'pi/4']          # Orientation of all models to insert
         num_models_x: 3              # How many models to insert along the x dimension
         num_models_y: 5              # How many models to insert along the y dimension
-  bin4:
+  bin5:
     models:
       gasket_part:
-        xyz_start: [0.0, 0.05, 0.0]
-        xyz_end: [0.2, 0.37, 0.0]
+        xyz_start: [0.1, 0.1, 0.0]
+        xyz_end: [0.5, 0.5, 0.0]
         rpy: [0, 0, 'pi/4']
         num_models_x: 2
         num_models_y: 3
-  bin5:
+  bin6:
     models:
       piston_rod_part:
-        xyz_start: [0.0, 0.0, 0.0]
-        xyz_end: [0.25, 0.35, 0.0]
+        xyz_start: [0.1, 0.1, 0.0]
+        xyz_end: [0.5, 0.5, 0.0]
         rpy: [0, 0, 'pi/4']
         num_models_x: 3
         num_models_y: 3
@@ -112,48 +114,38 @@ models_to_spawn:
       piston_rod_part_1:             # An arbitrary unique name of the model (will be randomized)
         type: piston_rod_part        # Type of model (must be installed locally)
         pose:
-          xyz: [0.1, 0.1, 0.25]      # Co-ordinates of the model origin in the specified reference frame
+          xyz: [0.2, 0.2, 0.75]      # Co-ordinates of the model origin in the specified reference frame
           rpy: [0, 0, '-pi/2']       # Roll, pitch, yaw of the model in the specified reference frame
 
 # Drops from the vacuum gripper to be triggered at particular locations
 drops:
   drop_regions:
-    shipping_box_flap:
-      frame: shipping_box_0::box_base # Frame the drop region/destination is specified in
+    above_agv_1:
+      frame: agv1::kit_tray_1        # Frame the drop region/destination is specified in
       min:                           # Min corner of the bounding box that triggers a drop
-        xyz: [-0.15, -0.35, 0.0]
+        xyz: [-0.3, -0.3, 0.0]
       max:                           # Max corner of the bounding box that triggers a drop
-        xyz: [0.15, 0.35, 0.5]
+        xyz: [0.3, 03, 0.5]
       destination:                   # Where to drop the part to
         xyz: [-0.35, 0.1, 0.15]
         rpy: [0, 0, 0.2]
-      product_type_to_drop: piston_rod_part
-    shipping_box_0_impeding:
-      frame: shipping_box_0::box_base
-      min:
-        xyz: [-0.15, -0.35, 0.0]
-      max:
-        xyz: [0.15, 0.35, 0.5]
-      destination:
-        xyz: [0.15, 0.15, 0.15]
-        rpy: [0, 0, -0.2]
-      product_type_to_drop: pulley_part
-    shipping_box_1_impeding:
-      frame: shipping_box_1::box_base
-      min:
-        xyz: [-0.15, -0.35, 0.0]
-      max:
-        xyz: [0.15, 0.35, 0.5]
-      destination:
-        xyz: [0.15, 0.15, 0.15]
-        rpy: [0, 0, -0.2]
-      product_type_to_drop: pulley_part
-    bin3_reachable:
-      min:
-        xyz: [-0.85, 0.7, 0.7]
-      max:
-        xyz: [-0.65, 1.60, 1.3]
-      destination:
-        xyz: [-0.65, 1.15, 0.76]
-        rpy: [0, 0, 0.5]
       product_type_to_drop: gear_part
+    above_agv_2:
+      frame: agv2::kit_tray_2
+      min:
+        xyz: [-0.3, -0.3, 0.0]
+      max:
+        xyz: [0.3, 0.3, 0.5]
+      destination:
+        xyz: [0.15, 0.15, 0.15]
+        rpy: [0, 0, -0.2]
+      product_type_to_drop: pulley_part
+    bin5_reachable:
+      min:
+        xyz: [0.0, 0.7, 0.7]
+      max:
+        xyz: [0.2, 1.60, 1.3]
+      destination:
+        xyz: [0.65, 1.15, 0.76]
+        rpy: [0, 0, 0.5]
+      product_type_to_drop: gasket_part
