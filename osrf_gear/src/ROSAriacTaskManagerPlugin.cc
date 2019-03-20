@@ -28,6 +28,8 @@
 #include <gazebo/common/Console.hh>
 #include <gazebo/common/Events.hh>
 #include <gazebo/msgs/gz_string.pb.h>
+#include <gazebo/physics/ContactManager.hh>
+#include <gazebo/physics/PhysicsEngine.hh>
 #include <gazebo/physics/PhysicsTypes.hh>
 #include <gazebo/physics/World.hh>
 #include <gazebo/transport/transport.hh>
@@ -179,6 +181,14 @@ namespace gazebo
 
     // During the competition, this environment variable will be set.
     bool competitionMode = false;
+
+    /// \brief Subscriber for the contact topic
+    public: transport::SubscriberPtr contactSub;
+
+    public: const std::vector<std::string> collisionFilter{
+      "base_link_collision", "shoulder_link_collision", "upper_arm_link_collision",
+      "forearm_link_collision", "wrist_1_link_collision", "wrist_2_link_collision",
+      "wrist_3_link_collision", "vacuum_gripper_link_collision"};
   };
 }
 
@@ -445,6 +455,10 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
 
       shipmentElem = shipmentElem->GetNextElement("shipment");
     }
+
+    auto contact_manager = this->dataPtr->world->Physics()->GetContactManager();
+    std::string contactTopic = contact_manager->CreateFilter("AriacTaskManagerFilter", this->dataPtr->collisionFilter);
+    this->dataPtr->contactSub = this->dataPtr->node->Subscribe(contactTopic, &ROSAriacTaskManagerPlugin::OnContactsReceived, this);
 
     // Add a new order.
     ariac::Order order = {orderID, startTime, interruptOnUnwantedProducts, interruptOnWantedProducts, allowedTime, shipments, 0.0};
@@ -1159,4 +1173,34 @@ void ROSAriacTaskManagerPlugin::OnShipmentContent(osrf_gear::DetectedShipment::C
   // store the shipment content to be used for deciding when to interrupt orders
   std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
   this->dataPtr->shipmentContents[shipment->destination_id] = shipment;
+}
+
+
+//////////////////////////////////////////////////
+void ROSAriacTaskManagerPlugin::OnContactsReceived(ConstContactsPtr& _msg)
+{
+  for (int i = 0; i < _msg->contact_size(); ++i)
+  {
+    const auto & contact = _msg->contact(i);
+    bool col_1_is_arm = false;
+    bool col_2_is_arm = false;
+    for (const auto & collision_name : this->dataPtr->collisionFilter)
+    {
+      if (!col_1_is_arm && std::string::npos != contact.collision1().rfind(collision_name))
+      {
+        col_1_is_arm = true;
+      }
+      if (!col_2_is_arm && std::string::npos != contact.collision2().rfind(collision_name))
+      {
+        col_2_is_arm = true;
+      }
+    }
+    if (col_1_is_arm && col_2_is_arm)
+    {
+      ROS_ERROR_STREAM("arm/arm contact detected: " << contact.collision1() << " and " << contact.collision2());
+      std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
+      common::Time time(contact.time().sec(), contact.time().nsec());
+      this->dataPtr->ariacScorer.NotifyArmArmCollision(time);
+    }
+  }
 }

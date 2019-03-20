@@ -38,6 +38,10 @@ class ScoringTester(ExampleNodeTester):
             elif "submit_agv2" == opcode:
                 print('Submitting agv2 shipment ' + arg)
                 self._test_submit_shipment(shipment_type=arg, agv_num=2)
+            elif "collide_arms" == opcode:
+                print('Commanding arms to collide')
+                self.comp_class.send_arm1_to_state([0, 0, 0, 0, 0, 0, -1.18])
+                self.comp_class.send_arm2_to_state([0, 0, 0, 0, 0, 0, 1.18])
             else:
                 raise ValueError("unknown command: " + repr(command))
 

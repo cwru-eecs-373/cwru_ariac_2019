@@ -159,6 +159,9 @@ namespace gazebo
     /// \brief Callback when a tray publishes it's content
     public: void OnShipmentContent(osrf_gear::DetectedShipment::ConstPtr shipment);
 
+    /// \brief Callback that recieves the contact sensor's messages.
+    protected: void OnContactsReceived(ConstContactsPtr& _msg);
+
     /// \brief Announce an order to participants.
     protected: void AnnounceOrder(const ariac::Order & order);
 
