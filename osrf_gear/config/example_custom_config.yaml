@@ -2,7 +2,6 @@
 options:
   insert_models_over_bins: true     # Whether or not to insert the models that are specified in models_over_bins
   spawn_extra_models: true          # Whether or not to spawn the models that are specified in models_to_spawn
-  start_box_at_belt_center: true    # If true, the first tray will start in the middle of the belt
   gazebo_state_logging: true        # Whether or not to generate a gazebo state log
   belt_population_cycles: 5         # How many of each tray to spawn on the belt beyond the first
   model_type_aliases:               # Aliases for model types which can be used in the configuration file
