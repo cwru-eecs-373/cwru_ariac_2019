@@ -45,6 +45,7 @@
 #include "osrf_gear/ARIAC.hh"
 #include "osrf_gear/ROSAriacTaskManagerPlugin.hh"
 #include "osrf_gear/AriacScorer.h"
+#include "osrf_gear/ConveyorBeltControl.h"
 #include "osrf_gear/DetectShipment.h"
 #include "osrf_gear/Shipment.h"
 #include "osrf_gear/Product.h"
@@ -124,6 +125,9 @@ namespace gazebo
 
     /// \brief Map of agv id to client that can ask AGV to animate
     public: std::map<int, ros::ServiceClient> agvAnimateClient;
+
+    /// \brief Client that turns on conveyor belt
+    public: ros::ServiceClient conveyorControlClient;
 
     /// \brief Transportation node.
     public: transport::NodePtr node;
@@ -293,6 +297,10 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
   std::string conveyorEnableTopic = "conveyor/enable";
   if (_sdf->HasElement("conveyor_enable_topic"))
     conveyorEnableTopic = _sdf->Get<std::string>("conveyor_enable_topic");
+
+  std::string conveyorControlService = "conveyor/control";
+  if (_sdf->HasElement("conveyor_control_service"))
+    conveyorControlService = _sdf->Get<std::string>("conveyor_control_service");
 
   std::string populationActivateTopic = "populate_belt";
   if (_sdf->HasElement("population_activate_topic"))
@@ -600,6 +608,9 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
     this->dataPtr->agvAnimateClient[index] =
       this->dataPtr->rosnode->serviceClient<std_srvs::Trigger>(serviceName);
   }
+
+  this->dataPtr->conveyorControlClient =
+    this->dataPtr->rosnode->serviceClient<osrf_gear::ConveyorBeltControl>(conveyorControlService);
 
   this->dataPtr->serverControlPub =
     this->dataPtr->node->Advertise<msgs::ServerControl>("/gazebo/server/control");
@@ -1138,6 +1149,18 @@ void ROSAriacTaskManagerPlugin::EnableConveyorBeltControl()
   gazebo::msgs::GzString msg;
   msg.set_data("enabled");
   this->dataPtr->conveyorEnablePub->Publish(msg);
+
+  if (!this->dataPtr->conveyorControlClient.exists())
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] conveyor belt control service does not exist");
+    return;
+  }
+  osrf_gear::ConveyorBeltControl req;
+  req.request.power = 100.0;
+  if (!this->dataPtr->conveyorControlClient.call(req))
+  {
+    ROS_ERROR_STREAM("[ARIAC TaskManager] failed to enable conveyor belt");
+  }
 }
 
 /////////////////////////////////////////////////
