@@ -135,9 +135,6 @@ namespace gazebo
     /// \brief Publisher for enabling the product population on the conveyor.
     public: transport::PublisherPtr populatePub;
 
-    /// \brief Publisher for enabling the conveyor.
-    public: transport::PublisherPtr conveyorEnablePub;
-
     /// \brief Publisher for controlling the blackout of sensors.
     public: transport::PublisherPtr sensorBlackoutControlPub;
 
@@ -569,10 +566,6 @@ void ROSAriacTaskManagerPlugin::Load(physics::WorldPtr _world,
   this->dataPtr->shipmentContentSubscriber =
     this->dataPtr->rosnode->subscribe(shipmentContentTopic, 1000,
       &ROSAriacTaskManagerPlugin::OnShipmentContent, this);
-
-  // Publisher for the conveyor enable topic
-  this->dataPtr->conveyorEnablePub =
-    this->dataPtr->node->Advertise<msgs::GzString>(conveyorEnableTopic);
 
   // Timer for regularly publishing state/score.
   this->dataPtr->statusPubTimer =
@@ -1146,10 +1139,6 @@ bool ROSAriacTaskManagerPlugin::HandleAGVDeliverService(
 /////////////////////////////////////////////////
 void ROSAriacTaskManagerPlugin::EnableConveyorBeltControl()
 {
-  gazebo::msgs::GzString msg;
-  msg.set_data("enabled");
-  this->dataPtr->conveyorEnablePub->Publish(msg);
-
   if (!this->dataPtr->conveyorControlClient.exists())
   {
     ROS_ERROR_STREAM("[ARIAC TaskManager] conveyor belt control service does not exist");
