@@ -95,6 +95,24 @@ bool ROSConveyorBeltPlugin::OnControlCommand(ros::ServiceEvent<
   const std::string& callerName = event.getCallerName();
   gzdbg << "Conveyor control service called by: " << callerName << std::endl;
 
+  // During the competition, this environment variable will be set.
+  bool is_ariac_task_manager = callerName.compare("/gazebo") == 0;
+  auto compRunning = std::getenv("ARIAC_COMPETITION");
+  if (compRunning && !is_ariac_task_manager)
+  {
+    std::string errStr = "Competition is running so this service is not enabled.";
+    gzerr << errStr << std::endl;
+    ROS_ERROR_STREAM(errStr);
+    res.success = false;
+    return true;
+  }
+
+  if (is_ariac_task_manager && !this->IsEnabled())
+  {
+    ROS_WARN_STREAM("Force enabling conveyor because power set by task manager.");
+    this->enabled = true;
+  }
+
   if (!this->IsEnabled())
   {
     std::string errStr = "Belt is not currently enabled so power cannot be set. It may be congested.";
