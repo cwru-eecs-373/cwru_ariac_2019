@@ -335,7 +335,6 @@ expand_snippet('laser_profiler.sdf.template')
       <start_competition_service_name>/ariac/start_competition</start_competition_service_name>
       <end_competition_service_name>/ariac/end_competition</end_competition_service_name>
       <population_activate_topic>/ariac/populate_belt</population_activate_topic>
-      <conveyor_enable_topic>/ariac/conveyor_enable</conveyor_enable_topic>
       <conveyor_control_service>/ariac/conveyor/control</conveyor_control_service>
       <submit_tray_service_name>/ariac/submit_shipment</submit_tray_service_name>
       <material_locations_service_name>/ariac/material_locations</material_locations_service_name>
