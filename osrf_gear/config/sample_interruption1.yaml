@@ -1,7 +1,7 @@
 # In this scenario:
 # - There are two orders of one shipment each:
 #   - The second will interrupt the first at a time that is convenient for the second order.
-#   - Teams can choose to re-purpose the products in the shipping box for the new order.
+#   - Teams can choose to re-purpose the products in the tray for the new order.
 #   - After the second order is complete, the first order is to be resumed.
 
 options:
