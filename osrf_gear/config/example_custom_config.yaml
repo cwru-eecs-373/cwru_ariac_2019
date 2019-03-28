@@ -116,6 +116,19 @@ models_to_spawn:
           xyz: [0.2, 0.2, 0.75]      # Co-ordinates of the model origin in the specified reference frame
           rpy: [0, 0, '-pi/2']       # Roll, pitch, yaw of the model in the specified reference frame
 
+# Models to be spawned on the conveyor belt
+belt_models:
+  pulley_part:                   # name of part model to spawn
+    1.0:                             # Time in seconds after trial starts to spawn it
+      pose:
+        xyz: [0.0, 0.0, 0.1]         # Coordinates relative to the start of the container to spawn the part
+        rpy: [0, 0, 'pi/2']          # Roll, pitch, yaw of the model
+  disk_part:
+    5.0:
+      pose:
+        xyz: [0.0, 0.0, 0.1]
+        rpy: [0, 0, 'pi/2']
+
 # Drops from the vacuum gripper to be triggered at particular locations
 drops:
   drop_regions:
