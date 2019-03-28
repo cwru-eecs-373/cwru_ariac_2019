@@ -256,23 +256,6 @@ ariac::ShipmentScore AriacScorer::GetShipmentScore(
       non_faulty_products.push_back(actual_product);
     }
   }
-  // Match products with desired products
-  // must check all permutations to make sure the product pose is correct
-  //  for each type of product
-  //    if size(desired_products_with_type) != size(actual_products_with_type)
-  //      ineligeble for all products bonus
-  //    contributing_presence_score = min(desired_products.size(), actual_products.size())
-  //    contributing_pose_score = 0
-  //    for each permutation of actual proudcts and desired products
-  //      score product pose and product presense
-  //      if permutation_pose_score > contributing_pose_score:
-  //        contibuting_pose_score = permutation_pose_score
-  //    scorer.productPose += contributing_pose_score
-  //    scorer.productPresense += contributing_presence_score
-  //  if eligible for all products bonus:
-  //    scorer.allProductsBonus = scorer.productPresense
-
-
   // Map of product type to indexes in desired products (first) and indexes in non faulty actual products (second)
   std::map<std::string, std::pair<std::vector<size_t>, std::vector<size_t>>> product_type_map;
   for (size_t d = 0; d < desired_shipment.products.size(); ++d)
