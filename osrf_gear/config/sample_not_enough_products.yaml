@@ -4,7 +4,6 @@
 #   - Teams should submit the orders even if they are not able to completely fulfil them.
 
 options:
-  fill_demo_shipment: false
   insert_models_over_bins: true
   spawn_extra_models: false
   model_type_aliases:
@@ -53,8 +52,8 @@ models_over_bins:
   bin1:
     models:
       disk_part:
-        xyz_start: [0.05, 0.1, 0.0]
-        xyz_end: [0.25, 0.3, 0.0]
+        xyz_start: [0.15, 0.1, 0.0]
+        xyz_end: [0.35, 0.3, 0.0]
         rpy: [0, 0, 'pi/4']
         num_models_x: 2
         num_models_y: 2
@@ -69,8 +68,8 @@ models_over_bins:
   bin5:
     models:
       piston_rod_part:
-        xyz_start: [0.0, 0.1, 0.0]
-        xyz_end: [0.2, 0.25, 0.0]
+        xyz_start: [0.1, 0.1, 0.0]
+        xyz_end: [0.3, 0.25, 0.0]
         rpy: [0, 0, 'pi/4']
         num_models_x: 2
         num_models_y: 2
