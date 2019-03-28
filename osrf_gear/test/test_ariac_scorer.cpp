@@ -210,6 +210,7 @@ TEST(TestAriacScorer, order_with_one_shipment_fulfilled_perfectly_wrong_agv)
   order.shipments.back().products.emplace_back();
   order.shipments.back().products.back().type = "gear_part";
   order.shipments.back().products.back().pose = make_pose(0, 1, 2, 0, 0, 5);
+  order.shipments.emplace_back();
   order.shipments.back().shipment_type = "order_0_shipment_1";
   order.shipments.back().agv_id = "agv1";
   order.shipments.back().products.emplace_back();
