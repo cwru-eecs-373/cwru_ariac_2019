@@ -118,7 +118,7 @@ models_to_spawn:
 
 # Models to be spawned on the conveyor belt
 belt_models:
-  gasket_part:                   # name of part model to spawn
+  pulley_part:                   # name of part model to spawn
     1.0:                             # Time in seconds after trial starts to spawn it
       pose:
         xyz: [0.0, 0.0, 0.1]         # Coordinates relative to the start of the container to spawn the part
