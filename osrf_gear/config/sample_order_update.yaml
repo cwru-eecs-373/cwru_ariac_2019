@@ -5,7 +5,6 @@
 #   - Teams should respond by filling the updated order instead of the original order.
 
 options:
-  fill_demo_shipment: false
   insert_models_over_bins: true
   spawn_extra_models: false
   model_type_aliases:
@@ -79,32 +78,32 @@ models_over_bins:
   bin1:
     models:
       gear_part:
-        xyz_start: [0.0, 0.0, 0.0]
-        xyz_end: [0.3, 0.37, 0.0]
+        xyz_start: [0.1, 0.1, 0.0]
+        xyz_end: [0.4, 0.47, 0.0]
         rpy: [0, 0, 0]
         num_models_x: 3
         num_models_y: 5
   bin2:
     models:
       disk_part:
-        xyz_start: [0.0, 0.05, 0.0]
-        xyz_end: [0.2, 0.37, 0.0]
+        xyz_start: [0.1, 0.15, 0.0]
+        xyz_end: [0.3, 0.47, 0.0]
         rpy: [0, 0, 'pi/4']
         num_models_x: 2
         num_models_y: 3
   bin3:
     models:
       pulley_part:
-        xyz_start: [0.15, 0.05, 0.0]
-        xyz_end: [0.15, 0.35, 0.0]
+        xyz_start: [0.15, 0.15, 0.0]
+        xyz_end: [0.15, 0.45, 0.0]
         rpy: [0, 0, 0]
         num_models_x: 1
         num_models_y: 2
   bin5:
     models:
       piston_rod_part:
-        xyz_start: [0.0, 0.0, 0.0]
-        xyz_end: [0.25, 0.35, 0.0]
+        xyz_start: [0.1, 0.1, 0.0]
+        xyz_end: [0.35, 0.45, 0.0]
         rpy: [0, 0, 'pi/4']
         num_models_x: 3
         num_models_y: 3
