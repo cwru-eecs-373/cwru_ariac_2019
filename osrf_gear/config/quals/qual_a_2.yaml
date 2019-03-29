@@ -1,0 +1,8 @@
+# In this scenario:
+# - There is a single order of two shipments:
+#   - The shipments must be delivered on opposite AGVs.
+#   - Products must be handled by both arms to complete the order
+#   - The gripper is faulty and will drop a product over each AGV.
+# - The trial as a whole has a time limit of 500 sec.
+
+

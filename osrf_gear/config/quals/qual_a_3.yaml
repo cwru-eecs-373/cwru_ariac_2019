@@ -1,0 +1,7 @@
+# In this scenario:
+# - There are two orders of one shipment each:
+#   - The second will interrupt the first at an inconvenient time.
+#   - The second has no time limit, but should be completed as fast as possible.
+#   - After the second order is complete, the first order is to be resumed.
+# - A product must be flipped to complete one of the orders.
+# - The trial as a whole has a time limit of 500 sec.
