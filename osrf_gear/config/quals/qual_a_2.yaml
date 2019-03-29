@@ -46,12 +46,12 @@ orders:
       part_3:
         type: order_part4
         pose:
-          xyz: [-0.15, 0.15, 0]
+          xyz: [-0.11, 0.18, 0]
           rpy: [0, 0, 0]
       part_4:
         type: order_part5
         pose:
-          xyz: [0.0, 0.15, 0]
+          xyz: [0.0, 0.0, 0]
           rpy: [0, 0, 'pi']
 
 models_over_bins:
