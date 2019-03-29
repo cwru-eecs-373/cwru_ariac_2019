@@ -11,7 +11,7 @@ time_limit: 500
 
 options:
   insert_models_over_bins: true
-  spawn_extra_models: false
+  spawn_extra_models: true
   belt_population_cycles: 5
   model_type_aliases:
     order_part1: gasket_part

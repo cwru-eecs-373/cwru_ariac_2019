@@ -10,7 +10,7 @@ time_limit: 500
 
 options:
   insert_models_over_bins: true
-  spawn_extra_models: false
+  spawn_extra_models: true
   model_type_aliases:
     order_part1: gasket_part
     order_part2: piston_rod_part
