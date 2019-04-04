@@ -114,16 +114,6 @@ void ROSLaserPlugin::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   }
 
   ROS_INFO_NAMED("laser", "Starting Laser Plugin (ns = %s)", this->robot_namespace_.c_str() );
-  // ros callback queue for processing subscription
-  this->deferred_load_thread_ = boost::thread(
-    boost::bind(&ROSLaserPlugin::LoadThread, this));
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Load the controller
-void ROSLaserPlugin::LoadThread()
-{
   this->gazebo_node_ = gazebo::transport::NodePtr(new gazebo::transport::Node());
   this->gazebo_node_->Init(this->world_name_);
 
