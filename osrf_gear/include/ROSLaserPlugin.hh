@@ -85,8 +85,6 @@ namespace gazebo
 
     // deferred load in case ros is blocking
     private: sdf::ElementPtr sdf;
-    private: void LoadThread();
-    private: boost::thread deferred_load_thread_;
     private: unsigned int seed;
 
     private: gazebo::transport::NodePtr gazebo_node_;
