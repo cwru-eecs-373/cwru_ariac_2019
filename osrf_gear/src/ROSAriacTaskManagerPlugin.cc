@@ -739,7 +739,6 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
       msgs::ServerControl msg;
       msg.set_stop(true);
       this->dataPtr->serverControlPub->Publish(msg);
-      gazebo::shutdown();
     }
   }
 
