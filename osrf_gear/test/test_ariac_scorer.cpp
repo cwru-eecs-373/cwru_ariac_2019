@@ -958,6 +958,9 @@ TEST(TestAriacScorer, two_orders_perfect)
     score.total()) << score;
   EXPECT_TRUE(score.orderScores["order_0"].isComplete());
   EXPECT_TRUE(score.orderScores["order_1"].isComplete());
+  EXPECT_DOUBLE_EQ(
+    make_shipment_score(1, 1, ALL_PRODUCTS),
+    score.orderScores["order_1"].completion_score());
 }
 
 TEST(TestAriacScorer, two_orders_first_ignored)

@@ -86,6 +86,7 @@ namespace ariac
     {
       _out << "<order_score " << _obj.orderID << ">" << std::endl;
       _out << "\tTotal order score: [" << _obj.total() << "]" << std::endl;
+      _out << "\tCompletion score: [" << _obj.completion_score() << "]" << std::endl;
       _out << "\tTime taken: [" << _obj.timeTaken << "]" << std::endl;
       _out << "\tComplete: [" << (_obj.isComplete() ? "true" : "false") << "]" << std::endl;
       _out << "\tPriority: [" << (_obj.priority) << "]\n";
@@ -130,12 +131,18 @@ namespace ariac
             /// \brief Calculate the total score.
             double total() const
             {
+              return completion_score() * priority;
+            };
+
+            /// \brief Get score without priority factor.
+            double completion_score() const
+            {
               double total = 0.0;
               for (const auto & item : this->shipmentScores)
               {
                 total += item.second.total();
               }
-              return total * priority;
+              return total;
             };
   };
 
