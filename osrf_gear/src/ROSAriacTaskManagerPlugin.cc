@@ -724,6 +724,15 @@ void ROSAriacTaskManagerPlugin::OnUpdate()
     gzdbg << logMessage.str() << std::endl;
     this->dataPtr->currentState = "done";
 
+    bool is_first = true;
+    std::stringstream sstr;
+    for (const auto order_tuple : this->dataPtr->currentGameScore.orderScores)
+    {
+      sstr << order_tuple.second.csv(is_first).c_str();
+      is_first = false;
+    }
+    ROS_INFO_STREAM(sstr.str().c_str());
+
     auto v = std::getenv("ARIAC_EXIT_ON_COMPLETION");
     if (v)
     {
