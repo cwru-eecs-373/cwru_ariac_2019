@@ -98,6 +98,49 @@ namespace ariac
       return _out;
     }
 
+    public: std::string csv(bool output_header=true) const
+    {
+      std::stringstream out;
+      // Gather data
+      size_t shipments_requested = shipmentScores.size();
+      size_t shipments_submitted = 0;
+      size_t shipments_completed = 0;
+      size_t shipments_wrong_agv = 0;
+      for (const auto shipment_tuple : shipmentScores)
+      {
+        if (shipment_tuple.second.isSubmitted)
+        {
+          ++shipments_submitted;
+          if (shipment_tuple.second.isComplete)
+          {
+            ++shipments_completed;
+          }
+          if (!shipment_tuple.second.correctAGV)
+          {
+            ++shipments_wrong_agv;
+          }
+        }
+      }
+      // Output header
+      if (output_header)
+      {
+        out << "\"order_id\",\"completion_score\",\"priority\",\"time\",\"is_complete\","
+            << "\"shipments_requested\",\"shipments_submitted\",\"shipments_completed\","
+            << "\"shipments_wrong_agv\"\r\n";
+      }
+      // Output data
+      out << "\"" << orderID << "\",";
+      out << completion_score() << ",";
+      out << priority << ",";
+      out << timeTaken << ",";
+      out << (isComplete() ? "1" : "0") << ",";
+      out << shipments_requested << ",";
+      out << shipments_submitted << ",";
+      out << shipments_completed << ",";
+      out << shipments_wrong_agv << "\r\n";
+      return out.str();
+    }
+
     /// \brief Mapping between shipment IDs and scores.
     public: std::map<ShipmentType_t, ShipmentScore> shipmentScores;
 
