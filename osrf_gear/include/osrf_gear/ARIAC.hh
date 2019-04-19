@@ -44,13 +44,13 @@ namespace ariac
                                             const ShipmentScore &_obj)
     {
       _out << "<shipment_score " << _obj.shipmentType << ">" << std::endl;
-      _out << "Completion score: [" << _obj.total() << "]" << std::endl;
-      _out << "Complete: [" << (_obj.isComplete ? "true" : "false") << "]" << std::endl;
-      _out << "Submitted: [" << (_obj.isSubmitted ? "true" : "false") << "]" << std::endl;
-      _out << "Product presence score: [" << _obj.productPresence << "]" << std::endl;
-      _out << "All products bonus: [" << _obj.allProductsBonus << "]" << std::endl;
-      _out << "Product pose score: [" << _obj.productPose << "]" << std::endl;
-      _out << "Delivered to correct agv: [" << (_obj.correctAGV ? "true" : "false") << std::endl;
+      _out << "\tCompletion score: [" << _obj.total() << "]" << std::endl;
+      _out << "\tComplete: [" << (_obj.isComplete ? "true" : "false") << "]" << std::endl;
+      _out << "\tSubmitted: [" << (_obj.isSubmitted ? "true" : "false") << "]" << std::endl;
+      _out << "\tProduct presence score: [" << _obj.productPresence << "]" << std::endl;
+      _out << "\tAll products bonus: [" << _obj.allProductsBonus << "]" << std::endl;
+      _out << "\tProduct pose score: [" << _obj.productPose << "]" << std::endl;
+      _out << "\tDelivered to correct agv: [" << (_obj.correctAGV ? "true" : "false") << "]" << std::endl;
       _out << "</shipment_score>" << std::endl;
       return _out;
     }
@@ -85,10 +85,11 @@ namespace ariac
                                             const OrderScore &_obj)
     {
       _out << "<order_score " << _obj.orderID << ">" << std::endl;
-      _out << "Total order score: [" << _obj.total() << "]" << std::endl;
-      _out << "Time taken: [" << _obj.timeTaken << "]" << std::endl;
-      _out << "Complete: [" << (_obj.isComplete() ? "true" : "false") << "]" << std::endl;
-      _out << "Priority: [" << (_obj.priority) << "]\n";
+      _out << "\tTotal order score: [" << _obj.total() << "]" << std::endl;
+      _out << "\tCompletion score: [" << _obj.completion_score() << "]" << std::endl;
+      _out << "\tTime taken: [" << _obj.timeTaken << "]" << std::endl;
+      _out << "\tComplete: [" << (_obj.isComplete() ? "true" : "false") << "]" << std::endl;
+      _out << "\tPriority: [" << (_obj.priority) << "]\n";
       for (const auto & item : _obj.shipmentScores)
       {
         _out << item.second << std::endl;
@@ -130,12 +131,18 @@ namespace ariac
             /// \brief Calculate the total score.
             double total() const
             {
+              return completion_score() * priority;
+            };
+
+            /// \brief Get score without priority factor.
+            double completion_score() const
+            {
               double total = 0.0;
               for (const auto & item : this->shipmentScores)
               {
                 total += item.second.total();
               }
-              return total * priority;
+              return total;
             };
   };
 
@@ -150,9 +157,9 @@ namespace ariac
                                             const GameScore &_obj)
     {
       _out << "<game_score>" << std::endl;
-      _out << "Total game score: [" << _obj.total() << "]" << std::endl;
-      _out << "Total process time: [" << _obj.totalProcessTime << "]" << std::endl;
-      _out << "Was arm/arm collision?: [" << _obj.was_arm_arm_collision << "]" << std::endl;
+      _out << "\tTotal game score: [" << _obj.total() << "]" << std::endl;
+      _out << "\tTotal process time: [" << _obj.totalProcessTime << "]" << std::endl;
+      _out << "\tWas arm/arm collision?: [" << _obj.was_arm_arm_collision << "]" << std::endl;
       for (const auto & item : _obj.orderScores)
       {
         _out << item.second << std::endl;
