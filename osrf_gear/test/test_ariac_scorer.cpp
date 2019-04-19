@@ -1006,7 +1006,9 @@ TEST(TestAriacScorer, two_orders_first_ignored)
     HIGH_PRIORITY_FACTOR * make_shipment_score(1, 1, ALL_PRODUCTS),
     score.total()) << score;
   EXPECT_FALSE(score.orderScores["order_0"].isComplete());
+  EXPECT_FALSE(score.orderScores["order_0"].shipmentScores.begin()->second.isComplete);
   EXPECT_TRUE(score.orderScores["order_1"].isComplete());
+  EXPECT_TRUE(score.orderScores["order_1"].shipmentScores.begin()->second.isComplete);
 }
 
 TEST(TestAriacScorer, two_orders_second_ignored)

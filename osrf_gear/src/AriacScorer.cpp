@@ -375,7 +375,10 @@ ariac::ShipmentScore AriacScorer::GetShipmentScore(
     // Add the pose score contributed by the highest scoring permutation
     scorer.productPose += contributing_pose_score;
   }
-
+  if (!is_missing_products)
+  {
+    scorer.isComplete = true;
+  }
   if (!has_faulty_product && !has_unwanted_product && !is_missing_products)
   {
     scorer.allProductsBonus = scorer.productPresence;
