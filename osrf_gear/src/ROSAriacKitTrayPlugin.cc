@@ -130,12 +130,27 @@ void KitTrayPlugin::OnUpdate(const common::UpdateInfo & _info)
     return;
   }
 
-  auto prevNumberContactingModels = this->contactingModels.size();
+  std::set<physics::ModelPtr> prevContactingModels(this->contactingModels);
   this->CalculateContactingModels();
-  if (prevNumberContactingModels != this->contactingModels.size()) {
+  if (prevContactingModels.size() != this->contactingModels.size()) {
     ROS_DEBUG_STREAM(this->parentLink->GetScopedName() << ": number of contacting models: "
       << this->contactingModels.size());
   }
+
+  // Look for models that were contacting tray but now aren't.
+  // Either they've been fixed to tray or have been removed from tray
+  std::vector<physics::ModelPtr> removedContactingModels;
+  std::set_difference(prevContactingModels.begin(), prevContactingModels.end(),
+    this->contactingModels.begin(), this->contactingModels.end(),
+    std::inserter(removedContactingModels, removedContactingModels.begin()));
+  for (auto model : removedContactingModels)
+  {
+    if (model) {
+      gzdbg << "removed contact " << model->GetName() << std::endl;
+      model->SetAutoDisable(true);
+    }
+  }
+
   this->ProcessContactingModels();
   if (this->publishingEnabled)
   {
