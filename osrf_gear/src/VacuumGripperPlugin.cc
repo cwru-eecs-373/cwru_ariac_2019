@@ -390,7 +390,7 @@ void VacuumGripperPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 /////////////////////////////////////////////////
 void VacuumGripperPlugin::Reset()
 {
-  this->dataPtr->prevUpdateTime = common::Time::GetWallTime();
+  this->dataPtr->prevUpdateTime = this->dataPtr->world->SimTime();
   this->dataPtr->zeroCount = 0;
   this->dataPtr->posCount = 0;
   this->dataPtr->attached = false;
@@ -444,7 +444,7 @@ void VacuumGripperPlugin::OnUpdate()
     this->dataPtr->disableRequested = false;
   }
 
-  if (common::Time::GetWallTime() -
+  if (this->dataPtr->world->SimTime() -
       this->dataPtr->prevUpdateTime < this->dataPtr->updateRate ||
       !this->dataPtr->enabled)
   {
@@ -513,7 +513,7 @@ void VacuumGripperPlugin::OnUpdate()
   //   this->HandleDetach();
   // }
 
-  this->dataPtr->prevUpdateTime = common::Time::GetWallTime();
+  this->dataPtr->prevUpdateTime = this->dataPtr->world->SimTime();
 }
 
 /////////////////////////////////////////////////
