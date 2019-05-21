@@ -12,7 +12,18 @@ def expand_snippet(filename, data=locals()):
     <!-- Set the initial camera pose to be looking at the workspace. -->
     <gui fullscreen='0'>
       <camera name='user_camera'>
+        <!-- pretty overview shot -->
         <pose frame=''>-7.56272 4.06148 6.60308 0 0.636 -0.467992</pose>
+
+        <!-- Top down part placement
+        <pose frame=''>-0.475239 0 4.863623 0 1.570796 0</pose> -->
+
+        <!-- Shipment placement AGV 1
+        <pose frame=''>0.301627 3.242337 2.584521 0 1.570796</pose> -->
+
+        <!-- Shipment placement AGV 2
+        <pose frame=''>0.301627 -3.242337 2.584521 0 1.570796</pose> -->
+
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
