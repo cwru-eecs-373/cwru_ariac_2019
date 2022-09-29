@@ -401,8 +401,9 @@ void PopulationPlugin::OnUpdate()
     {
       // Move it to the target pose.
       modelPtr->SetWorldPose(obj.pose);
-      modelPtr->SetLinearVel(ignition::math::Vector3d::Zero);
-      modelPtr->SetLinearAccel(ignition::math::Vector3d::Zero);
+      modelPtr->ResetPhysicsStates();
+      // modelPtr->SetLinearVel(ignition::math::Vector3d::Zero);
+      // modelPtr->SetLinearAccel(ignition::math::Vector3d::Zero);
       gzdbg << "Object [" << modelName << "] on belt" << std::endl;
     }
 

@@ -496,8 +496,9 @@ void VacuumGripperPlugin::OnUpdate()
 
       // Teleport it to the destination.
       this->dataPtr->dropAttachedModel->SetWorldPose(objDest);
-      this->dataPtr->dropAttachedModel->SetLinearVel(ignition::math::Vector3d::Zero);
-      this->dataPtr->dropAttachedModel->SetLinearAccel(ignition::math::Vector3d::Zero);
+      this->dataPtr->dropAttachedModel->ResetPhysicsStates();
+      // this->dataPtr->dropAttachedModel->SetLinearVel(ignition::math::Vector3d::Zero);
+      // this->dataPtr->dropAttachedModel->SetLinearAccel(ignition::math::Vector3d::Zero);
 
       this->dataPtr->droppedObjects.push_back(this->dataPtr->attachedObjType);
 
