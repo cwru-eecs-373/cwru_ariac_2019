@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo "Ensuring scoring log file exists"
 log_dir="$HOME/.ariac/log"
