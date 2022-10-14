@@ -1,9 +1,10 @@
 # Gazebo Environment for Agile Robotics (GEAR)
 
+**This repository has been updated to work with ROS Noetic/Ubuntu Focal.  It *will* work fine once the fix for a small bug in the Python3 empy packaged is pushed (3.3.2-5.1->3.3.4).**
+
 GEAR is the software used by teams participating in the Agile Robotics for
 Industrial Automation Competition (ARIAC) hosted by the National Institute
 of Standards and Technology (NIST).
-
 
 Please see the [wiki](https://bitbucket.org/osrf/ariac/wiki) for installation instructions.
 
