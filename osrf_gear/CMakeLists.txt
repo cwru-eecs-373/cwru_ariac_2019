@@ -432,5 +432,5 @@ catkin_add_env_hooks(99_osrf_gear_setup
 if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_ariac_scorer test/test_ariac_scorer.cpp)
   target_link_libraries(test_ariac_scorer
-    AriacScorer ignition-math4::ignition-math4)
+    AriacScorer ${GAZEBO_LIBRARIES})
 endif()
