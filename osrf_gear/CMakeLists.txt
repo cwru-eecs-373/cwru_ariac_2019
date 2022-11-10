@@ -17,7 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   geometry_msgs
   message_generation
-  ignition-math6
 )
 
 find_package(gazebo REQUIRED)
@@ -433,5 +432,5 @@ catkin_add_env_hooks(99_osrf_gear_setup
 if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_ariac_scorer test/test_ariac_scorer.cpp)
   target_link_libraries(test_ariac_scorer
-    AriacScorer ${catkin_LIBRARIES})
+    AriacScorer ${GAZEBO_LIBRARIES})
 endif()
