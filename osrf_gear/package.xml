@@ -41,6 +41,8 @@
   <depend>python3-rospkg</depend>
   <depend>robot_state_publisher</depend>
   <depend>rospack</depend>
+  <depend>gazebo_ros_control</depend>
+  <depend>ros_control</depend>
 
   <build_depend>message_generation</build_depend>
   <exec_depend>controller_manager</exec_depend>
