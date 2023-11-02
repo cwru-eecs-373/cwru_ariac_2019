@@ -6,3 +6,13 @@ build_*
 *.swp
 gear.sublime-*
 
+# Stuff based on building debian packages
+**/*obj-*/
+
+**/debian/
+
+**/*.deb
+**/*.ddeb
+
+# Stuff from using MS VSCode
+**/.vscode
