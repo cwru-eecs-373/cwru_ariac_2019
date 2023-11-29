@@ -396,6 +396,11 @@ install(PROGRAMS script/gear.py script/gazebo_unpauser.py script/startup.sh
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+# Install a working em.py for now
+install(FILES src/osrf_gear/em.py
+  DESTINATION ${CATKIN_GLOBAL_PYTHON_DESTINATION}
+)
+
 # Install all the config files
 install(DIRECTORY config/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
